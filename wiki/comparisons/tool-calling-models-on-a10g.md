@@ -1,12 +1,19 @@
 ---
 tags: [comparison, master-table]
 last_updated: 2026-05-07
-source_count: 8
+source_count: 12
 ---
 
 # Tool-Calling & Code Models on A10G — Master Comparison
 
-The artifact that answers the top-level research question from [[wiki/overview]]: which open-source LLMs are credible for tool selection / complex code on a single A10G (24 GB) via [[infrastructure/vllm]] under [[infrastructure/nvidia-dynamo]]?
+The artifact that answers the original (A10G-locked) research question from
+[[wiki/overview]]: which open-source LLMs are credible for tool selection /
+complex code on a single A10G (24 GB) via [[infrastructure/vllm]] under
+[[infrastructure/nvidia-dynamo]]?
+
+> **Companion table (2026-05 expansion)**: see [[comparisons/models-by-budget]]
+> for the same question across the full AWS GPU spectrum (g4dn → p6-b200), and
+> [[hardware/aws-gpu-landscape]] for the GPU/instance menu.
 
 All numbers below are from official primary sources (HF model cards, tech reports, vendor blogs) cross-checked May 2026, and are **FP16/BF16 unless explicitly marked otherwise**. No public BFCL/SWE-bench/LiveCodeBench/EvalPlus runs exist at AWQ INT4 — the only quantized public scores in this domain are Aider's Ollama Q8 entries.
 
@@ -24,7 +31,10 @@ All numbers below are from official primary sources (HF model cards, tech report
 
 | Model | Params | Quant | VRAM | Max ctx | BFCL | HumanEval | LCB | License | vLLM parser | $/hr | Verdict |
 |---|---|---|---|---|---|---|---|---|---|---:|---|
-| [[models/granite-3.1-8b\|Granite-3.3-8B-Instruct]] | 8B | AWQ INT4 | ~5 GB | 100k+ | none on card; "best-in-class" claim | **89.73** | not reported | Apache-2.0 | `granite` | $1.006 | ✅ **commercial default** |
+| [[models/qwen3-coder-30b-a3b\|Qwen3-Coder-30B-A3B-Instruct]] | 31B/3.3B MoE | AWQ INT4 | ~17–18 GB | ~30k | family BFCL v3 ~0.81 live | not reported | SWE-V ~50.3 | Apache-2.0 | `qwen3_coder` | $1.006 | ✅ **NEW code+tools default** |
+| [[models/devstral-small\|Devstral-Small-2507]] | 24B | AWQ INT4 | ~13 GB | ~30k | not published | not reported | SWE-V **53.6** (v2-2512: 68.0) | Apache-2.0 | `mistral` | $1.006 | ✅ **best A10G SWE-bench, Apache** |
+| [[models/qwen3-32b\|Qwen3-32B (dense, hybrid reasoning)]] | 32B | AWQ INT4 | ~18 GB | ~7k ⚠ | family BFCL v3 ~70.8 (235B) | not reported | not reported | Apache-2.0 | `hermes` + `deepseek_r1` | $1.006 | ⚠ tight ctx (consider g6e) |
+| [[models/granite-3.1-8b\|Granite-3.3-8B-Instruct]] | 8B | AWQ INT4 | ~5 GB | 100k+ | none on card; "best-in-class" claim | **89.73** | not reported | Apache-2.0 | `granite` | $1.006 | ✅ **commercial default for tool calling** |
 | [[models/hermes-3-llama-3.1-8b\|Hermes-3-Llama-3.1-8B]] | 8B | AWQ INT4 | ~5 GB | 100k+ | "~91% well-formed JSON" — not BFCL | not on card | — | Llama 3.1 community | `hermes` | $1.006 | ✅ tool-calling specialist |
 | [[models/llama-3.1-8b-instruct\|Llama-3.1-8B-Instruct]] | 8B | AWQ INT4 | ~5 GB | 100k+ | **76.1 (V2)** | 72.6 | — | Llama 3.1 community | `llama3_json` | $1.006 | ✅ generalist baseline |
 | [[models/qwen2.5-coder-7b\|Qwen2.5-Coder-7B-Instruct]] | 7B | AWQ INT4 | ~4 GB | 100k+ | not on leaderboard | **88.4** | 18.2 (07–11/2024) | Apache-2.0 | `hermes` ⚠ flaky | $1.006 | ✅ cheap code 7B |
@@ -38,25 +48,35 @@ All numbers below are from official primary sources (HF model cards, tech report
 | [[models/xlam-7b\|Llama-xLAM-2-8b-fc-r]] | 8B | AWQ INT4 | ~5 GB | 100k+ | "SOTA on V3" qualitative | — | — | **CC-BY-NC-4.0 — research only** | `xlam` | $1.006 | 🚫 NC license |
 | [[models/xlam-7b\|xLAM-7b-fc-r]] (v1) | 7B | AWQ INT4 | ~4 GB | 4K | 88.24 (V1, 07/2024) | — | — | **CC-BY-NC-4.0** | plugin (`xlam_tool_call_parser.py`) | $1.006 | 🚫 NC + 4K ctx |
 
-## Multi-GPU only
+## Multi-GPU and bigger boxes (out of A10G scope; see [[comparisons/models-by-budget]])
 
 | Model | Params | Best fit | Box | $/hr | Notes |
 |---|---|---|---|---:|---|
+| [[models/qwen2.5-coder-32b\|Qwen2.5-Coder-32B]] | 32B | AWQ INT4 80K ctx | **g6e.xlarge** | **$1.861** | **single-GPU 48 GB beats g5.12xl** |
+| [[models/qwen3-coder-30b-a3b\|Qwen3-Coder-30B-A3B]] | 31B MoE | FP8 256K ctx | g6e.xlarge | $1.861 | full quality single-GPU |
 | [[models/qwen2.5-coder-32b\|Qwen2.5-Coder-32B]] | 32B | TP=2 INT8 or TP=4 FP16 | g5.12xlarge | $5.672 | full-quality 32B coder |
+| [[models/glm-4.5-air]] | 106B/12B MoE | FP8 TP=2 | g6e.12xlarge | $10.493 | MIT, SWE-V 64, TAU 70 |
 | [[models/llama-3.3-70b-instruct\|Llama-3.3-70B-Instruct]] | 70B | TP=8 AWQ INT4 | g5.48xlarge | $16.288 | cheapest 70B fit (PCIe) |
 | [[models/llama-3.3-70b-instruct\|Llama-3.3-70B-Instruct]] | 70B | TP=8 FP16 (NVLink) | p4d.24xlarge | $32.7726 | best Ampere/NVLink latency |
 | Hermes-4-70B | 70B | TP=8 AWQ INT4 | g5.48xlarge | $16.288 | Hermes specialist scaled up |
+| [[models/llama-4-scout]] | 109B/17B MoE | INT4 TP=8 | g6e.48xlarge | $30.13 | 10M ctx, Llama 4 community |
+| [[models/qwen3-coder-480b]] | 480B/35B MoE | FP8 TP=8 | p5e/p5en | ~$45+ | Apache-2.0, SWE-V 66.5 |
+| [[models/deepseek-v3.1]] | 671B/37B MoE | FP8 TP=8 | p5e/p5en | ~$45+ | MIT, SWE-V 66.0 |
+| [[models/kimi-k2]] | 1T/32B MoE | FP8 TP=8 | p5e/p5en or p6-b200 | $45+/$113.93 | K2.6 SWE-V **80.2** |
+| [[models/gpt-oss-120b]] | 117B/5.1B MoE | MXFP4 native | p5.48xl slice / p6-b200 | $98.32+ | requires sm_90+ for MXFP4 native |
 
 See [[hardware/multi-gpu-options]] for the full cost menu.
 
-## Recommended starting points by use case
+## Recommended starting points by use case (updated 2026-05)
 
-- **Just tool calling, commercial use, cheapest** → [[models/granite-3.1-8b|Granite-3.3-8B-Instruct]] (Apache-2.0, `granite` parser, HE 89.73). The default for "I want tool calling and don't care about code".
-- **Code + tool calling, commercial use** → [[models/qwen2.5-coder-14b|Qwen2.5-Coder-14B-Instruct]] at AWQ INT4. Best-published-numbers code+tool combo that fits A10G. **Caveat**: vLLM `hermes` parser is known-flaky on this model — install `hanXen/vllm-qwen2.5-coder-tool-parser` plugin for reliable tool calls.
-- **Best tool-calling specialist, commercial use, single A10G** → [[models/hermes-3-llama-3.1-8b|Hermes-3-Llama-3.1-8B]]. Mainline vLLM `hermes` parser is named for this model.
-- **Maximum code quality on g5.xlarge** → Accept the tight context: [[models/qwen2.5-coder-32b|Qwen2.5-Coder-32B-Instruct]] AWQ INT4 with `--max-model-len 7168`. **Or step up** to g5.12xlarge for full FP16 quality at ~$5.67/hr.
-- **Frontier-quality generalist** → [[models/llama-3.3-70b-instruct|Llama-3.3-70B-Instruct]] on g5.48xlarge ($16.288/hr) or p4d ($32.77/hr).
-- **Watch for**: **Qwen3-Coder family** (Feb 2026 release, claims >70% SWE-bench Verified for Qwen3-Coder-Next) and **Granite 4.x** as the next-generation Apache-2.0 options.
+- **Just tool calling, commercial use, cheapest** → [[models/granite-3.1-8b|Granite-3.3-8B-Instruct]] (Apache-2.0, `granite` parser, HE 89.73).
+- **Code + tool calling, commercial use** → [[models/qwen3-coder-30b-a3b|Qwen3-Coder-30B-A3B-Instruct]] AWQ INT4 (Apache-2.0, mainline `qwen3_coder` parser). **Replaces** the older Qwen2.5-Coder-14B recommendation — same A10G fit, better SWE-bench, and the new parser fixes the flaky-`hermes` issue.
+- **Best agentic SWE-bench on A10G** → [[models/devstral-small|Devstral-Small-2507]] / Devstral-Small-2-2512 (Apache-2.0, `mistral` parser, SWE-V 53.6 → 68.0). Replaces Codestral-22B (MNPL non-commercial blocker).
+- **Best tool-calling specialist, commercial use** → [[models/hermes-3-llama-3.1-8b|Hermes-3-Llama-3.1-8B]] (Llama community, mainline `hermes` parser).
+- **Maximum code quality on a single GPU** → step up to **g6e.xlarge ($1.861/hr, L40S 48 GB)**: run Qwen2.5-Coder-32B / [[models/qwen3-32b]] / Qwen3-Coder-30B-A3B at FP8 with full ctx, no multi-GPU comms tax. See [[hardware/g6e-l40s]].
+- **70B generalist** → [[models/llama-3.3-70b-instruct|Llama-3.3-70B-Instruct]] AWQ INT4 TP=4 on **g6e.12xlarge ($10.493/hr)** — cheaper than g5.48xlarge and faster.
+- **Frontier open-source code+tools** → [[models/qwen3-coder-480b]] (Apache-2.0) / [[models/deepseek-v3.1]] (MIT) / [[models/kimi-k2]] (mod-MIT) on p5e/p5en (H200) or p6-b200.
+- **Apache-2.0 frontier reasoning** → [[models/gpt-oss-20b]] / [[models/gpt-oss-120b]] (MXFP4, requires sm_90+ for native speed — practical AWS = p5+).
 
 ## What we still don't know (the wiki's data gaps)
 

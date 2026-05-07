@@ -1,74 +1,161 @@
 ---
 tags: [overview]
 last_updated: 2026-05-07
-source_count: 4
+source_count: 14
 ---
 
 # Overview
 
-The research question: **which open-source LLMs are credible candidates for tool selection and complex code generation, when served via NVIDIA Dynamo + vLLM on AWS EC2 g5.xlarge (single NVIDIA A10G, 24 GB VRAM)?**
+The research question: **which open-source LLMs are credible candidates for tool
+selection and complex code generation, and which AWS GPU instance hits the right
+quality / cost / fit balance for each?**
 
-## Hard constraints
+The original wiki was scoped to a single hardware target (g5.xlarge / A10G 24 GB).
+That target is preserved as the **baseline** — but the wiki now covers the full
+AWS GPU spectrum from g4dn ($0.526/hr) to p6-b200 ($113.93/hr) and the matching
+open-source model tiers from 7B to 1T parameters. See
+[[hardware/aws-gpu-landscape]] and [[comparisons/models-by-budget]].
 
-- **GPU**: single NVIDIA A10G, 24 GB GDDR6, sm_86 (Ampere) — no native FP8 tensor cores; ~70 TF FP16 dense (NOT 125 like the data-center A10). See [[hardware/a10g-g5xlarge]].
-- **Instance**: AWS EC2 g5.xlarge as the primary target ($1.006/hr us-east-1 on-demand). Multi-GPU options catalogued in [[hardware/multi-gpu-options]].
-- **Serving stack**: [[infrastructure/vllm]] (latest stable: 0.20.1) under [[infrastructure/nvidia-dynamo]]. Note: Dynamo's own README says use vLLM directly on a single GPU — Dynamo's value is multi-GPU/multi-node.
-- **Capability focus**: [[concepts/tool-selection]] and [[concepts/code-generation]]. Pure conversational quality is secondary.
+## Hard constraints (still)
 
-## What "wins" looks like
+- **Serving stack**: [[infrastructure/vllm]] (latest stable: 0.20.x) under
+  [[infrastructure/nvidia-dynamo]]. Dynamo's value is multi-GPU/multi-node;
+  on a single GPU use vLLM directly per Dynamo's own README.
+- **Capability focus**: [[concepts/tool-selection]] and [[concepts/code-generation]].
+  Pure conversational quality is secondary.
+- **License**: commercial-friendly preferred. CC-BY-NC-4.0 (xLAM) and MNPL
+  (Codestral 22B) are non-commercial blockers; Llama 4 Community is OK below
+  700M MAU.
 
-A model wins if it:
-1. **Fits** at a usable context length (≥ 8k effective KV cache) on a single A10G, ideally at AWQ INT4 (Marlin kernels are excellent on Ampere; FP8 is not — see [[infrastructure/quantization]]).
-2. **Scores well** on the relevant benchmarks: BFCL for tool calling, HumanEval/MBPP/LiveCodeBench/SWE-bench/Aider for code. See [[concepts/benchmarks]].
-3. **Has a working vLLM tool-call parser** (mainline, not a fork). Models without one (Phi-3 / Phi-4, Functionary in mainline) are agentic-disqualified. See [[infrastructure/vllm]].
-4. **Has a commercial-friendly license**. CC-BY-NC-4.0 (xLAM) and MNPL (Codestral 22B v0.1) are non-commercial blockers.
-5. **Costs reasonably**: g5.xlarge is **$1.006/hr** on-demand, ~$734/month 24×7. Spot can cut this 30–70%. [Source: [[sources/aws-ec2-pricing-2026-05]]]
+## Soft constraints (relaxed in this expansion)
 
-## Recommended defaults (verified May 2026)
+- **GPU**: now spans the full AWS NVIDIA lineup — T4 (sm_75), A10G (sm_86), L4
+  (sm_89), L40S (sm_89), A100 (sm_80), H100 (sm_90), H200 (sm_90), B200 (sm_100).
+- **Instance**: g5.xlarge remains the **baseline**, but **g6e.xlarge ($1.861/hr,
+  L40S 48 GB)** is now the recommended sweet spot for 24–32B models that want
+  full quality without multi-GPU comms overhead.
 
-For commercial deployment on g5.xlarge:
+## What "wins" looks like (by budget tier)
 
-| Use case | Recommendation | Why |
-|---|---|---|
-| **Tool calling + reasoning** | [[models/granite-3.1-8b\|Granite-3.3-8B-Instruct]] | Apache-2.0, `granite` parser, HE 89.73 |
-| **Code + tool calling** | [[models/qwen2.5-coder-14b\|Qwen2.5-Coder-14B-Instruct]] (AWQ) | Apache-2.0, sweet-spot fit, HE 89.6 / LCB 23.4 — note known parser bug |
-| **Tool-calling specialist** | [[models/hermes-3-llama-3.1-8b\|Hermes-3-Llama-3.1-8B]] | Canonical `hermes` parser target |
-| **Best generalist 24B** | [[models/mistral-small-24b\|Mistral-Small-3.2-24B-Instruct-2506]] | Apache-2.0, 128K, "agentic" tuning |
+[Source: [[sources/aws-extended-gpu-pricing-2026-05]], [[comparisons/models-by-budget]]]
 
-See [[wiki/comparisons/tool-calling-models-on-a10g]] for the master table.
+| Tier | $/hr | Best tool calling | Best complex code | Best agentic SWE-bench |
+|---|---:|---|---|---|
+| < $1/hr (T4/L4) | $0.53–$0.80 | [[models/granite-3.1-8b\|Granite-3.3-8B]] | [[models/qwen2.5-coder-7b]] | [[models/devstral-small]] AWQ |
+| $1–$2/hr (A10G **baseline**) | $1.006 | [[models/granite-3.1-8b\|Granite-3.3-8B]] | [[models/qwen3-coder-30b-a3b]] AWQ | [[models/devstral-small]] (SWE-V 53.6) |
+| $2–$5/hr (L40S 48GB) | $1.861–$3.0 | [[models/qwen3-coder-30b-a3b]] FP8 | [[models/qwen3-32b]] / [[models/devstral-small]] FP16 | [[models/devstral-small]]-2 (SWE-V 68) |
+| $5–$15/hr (PCIe TP) | $5.67–$10.5 | [[models/glm-4.5-air]] FP8 TP=2 | [[models/qwen2.5-coder-32b]] FP16 TP=4 | [[models/glm-4.5-air]] |
+| $15–$33/hr (8× G or NVLink) | $16.29–$32.77 | [[models/llama-3.3-70b-instruct]] | [[models/devstral-small]]-2-123B | [[models/qwen3-coder-480b]] INT4 |
+| $33–$115/hr (P5/P6) | $40.97–$113.93 | [[models/qwen3-coder-480b]] | [[models/qwen3-coder-480b]] / [[models/kimi-k2]] | [[models/kimi-k2]] K2.6 (**SWE-V 80.2**) |
 
-## Candidate landscape (verified)
+## Recommended defaults — by use case
 
-[Source: [[sources/bfcl-leaderboard-2026-05]], [[sources/code-benchmarks-2026-05]]]
+For commercial deployment, May 2026:
 
-- **Tool-calling specialists** — fine-tuned for function calling: [[models/hermes-3-llama-3.1-8b]] (Llama community, mainline parser), [[models/xlam-7b]] (CC-BY-NC, research only), [[models/functionary-small]] (MIT, no mainline parser).
-- **Code specialists** — strong on code benchmarks: [[models/qwen2.5-coder-7b]], [[models/qwen2.5-coder-14b]], [[models/qwen2.5-coder-32b]] (Apache-2.0), [[models/codestral-22b]] (MNPL — non-commercial), [[models/deepseek-coder-v2-lite]] (DeepSeek License — commercial OK, MoE 16B/2.4B active).
-- **Generalists with strong tool use**: [[models/llama-3.1-8b-instruct]] (BFCL v2 76.1), [[models/llama-3.3-70b-instruct]] (BFCL v2 77.3 — multi-GPU only), [[models/mistral-small-24b]] (Mistral Small 3.2), [[models/granite-3.1-8b]] (now Granite 3.3 with HE 89.73), [[models/phi-3-medium-14b]] (no tool calling — disqualified).
+| Use case | Recommendation | Box | Why |
+|---|---|---|---|
+| Tool calling, cheapest | [[models/granite-3.1-8b\|Granite-3.3-8B]] AWQ | g4dn.xlarge / g5.xlarge | Apache-2.0, `granite` parser, HE 89.73 |
+| Code+tools, A10G baseline | [[models/qwen3-coder-30b-a3b]] AWQ | g5.xlarge | Apache-2.0, `qwen3_coder` parser, MoE 3.3B active |
+| Agent SWE-bench, A10G | [[models/devstral-small]] AWQ | g5.xlarge | Apache-2.0, SWE-V 53.6→68 |
+| Code+tools, full quality | [[models/qwen3-coder-30b-a3b]] FP8 | **g6e.xlarge** | 256K ctx, single-GPU |
+| 70B generalist | [[models/llama-3.3-70b-instruct]] AWQ | g6e.12xlarge | TP=4 PCIe, 192 GB |
+| Frontier open-source code+tools | [[models/qwen3-coder-480b]] / [[models/kimi-k2]] | p5e/p5en or p6-b200 | only multi-node options |
+| Best Apache-2.0 reasoning | [[models/gpt-oss-20b]] (high reasoning) | p5 slice or g6e.xlarge BF16 | SWE-V 60.7 small footprint |
 
-## Pitfalls and caveats discovered during ingest
+See [[comparisons/tool-calling-models-on-a10g]] for the original A10G master table
+and [[comparisons/models-by-budget]] for the broader budget cut.
 
-1. **Qwen2.5-Coder is absent from the BFCL leaderboard** despite tool-calling claims in the tech report. The vLLM `hermes` parser also mis-extracts its output (model emits ```json``` fences instead of `<tool_call>` tags). Use the community parser plugin for production.
-2. **All public BFCL/SWE-bench/LCB scores are FP16/BF16** — no public AWQ INT4 evaluations. Aider Ollama Q8 entries are the only quantized public references.
-3. **SWE-bench Verified is not published** for any of the 13 wiki candidate models. Sub-30B dense models typically score <15% with stock harnesses; this benchmark is not currently a discriminator below ~30B.
-4. **Mistral-Small versioning is messy** — three 24B releases in 13 months (2501 → 3.1 → 3.2). Pin specific dated revisions in production.
-5. **Granite 3.3 supersedes 3.1** — HumanEval jumped from "not on card" to 89.73. Wiki canonical is now 3.3.
-6. **Phi-3 and Phi-4 14B both lack vLLM tool parsers** — Phi-4-mini (3.8B) is the only Phi family member with native tool calling.
-7. **Functionary needs MeetKai's `server_vllm.py` fork** — no mainline parser despite an active 8B variant.
-8. **NVIDIA Dynamo offers essentially nothing for a single A10G** — its own README says use vLLM directly. The features (disaggregated prefill/decode, smart router, NIXL) are multi-GPU/multi-node by design.
-9. **No NVLink on g5** — multi-GPU on g5.12xlarge / g5.48xlarge is over PCIe Gen4. For NVLink + FP8, step to p4d / p5.
+## Candidate landscape (May 2026)
+
+[Source: [[sources/bfcl-leaderboard-2026-05]], [[sources/code-benchmarks-2026-05]],
+[[sources/qwen3-coder-cards]], [[sources/deepseek-v3-r1-family]], [[sources/glm-4.5-cards]],
+[[sources/kimi-k2-cards]], [[sources/gpt-oss-cards]], [[sources/devstral-small-cards]],
+[[sources/llama-4-cards]]]
+
+### A10G-class (≤ 24 GB single GPU)
+
+- **Tool-calling specialists**: [[models/hermes-3-llama-3.1-8b]] (Llama community,
+  mainline parser), [[models/xlam-7b]] (CC-BY-NC, research only),
+  [[models/functionary-small]] (MIT, no mainline parser).
+- **Code specialists**: [[models/qwen2.5-coder-7b]], [[models/qwen2.5-coder-14b]],
+  [[models/qwen2.5-coder-32b]] (Apache-2.0, parser flaky); **[[models/qwen3-coder-30b-a3b]]
+  (Apache-2.0, new `qwen3_coder` parser — supersedes the Qwen2.5-Coder line)**;
+  [[models/codestral-22b]] (MNPL — non-commercial); [[models/deepseek-coder-v2-lite]]
+  (DeepSeek License — OK); **[[models/devstral-small]] (Apache-2.0, SWE-V 53–68%)**.
+- **Generalists**: [[models/llama-3.1-8b-instruct]], [[models/mistral-small-24b]],
+  [[models/granite-3.1-8b]], [[models/phi-3-medium-14b]] (no parser — disqualified),
+  **[[models/qwen3-32b]] (Apache-2.0, hybrid reasoning)**.
+
+### L40S-class (48 GB single GPU on g6e)
+
+Adds: full Qwen3-Coder-30B-A3B at FP8 + 256K ctx, full Devstral-Small-24B at FP16,
+Mistral-Small-3.2-24B at FP16 with KV headroom, and any 32B AWQ INT4 with 80K ctx.
+
+### Multi-GPU PCIe (g6e.12xlarge / g5.48xlarge)
+
+Adds: [[models/llama-3.3-70b-instruct]], **[[models/glm-4.5-air]]** (106B/12B MoE,
+MIT, SWE-V 64.2), Devstral-2-123B, Hermes-4-70B, Llama-4-Scout INT4.
+
+### NVLink / multi-node (p4d / p5 / p5e / p6)
+
+Adds the open-source frontier: **[[models/deepseek-v3.1]]** (671B/37B, SWE-V 66.0),
+**[[models/qwen3-coder-480b]]** (480B/35B, SWE-V 66.5), **[[models/kimi-k2]]**
+(1T/32B, K2.6 SWE-V **80.2**), [[models/llama-4-scout]]/Maverick, GLM-4.5 (355B),
+**[[models/gpt-oss-120b]]** (MXFP4 native, requires sm_90+).
+
+## Pitfalls and caveats (May 2026)
+
+1. **Qwen2.5-Coder is superseded by Qwen3-Coder** for new deployments. The new
+   `qwen3_coder` vLLM parser fixes the flaky-`hermes` issue documented in earlier
+   wiki entries.
+2. **Codestral 22B is superseded by Devstral-Small** for commercial use — same
+   Mistral lineage, **Apache-2.0** instead of MNPL.
+3. **MXFP4 weights** ([[models/gpt-oss-*]]) require Hopper or newer (sm_90+).
+   On A10G/L4/L40S, vLLM dequantizes to BF16 (≈ 2× VRAM). Practical native AWS
+   target = p5+ / p6-b200.
+4. **AWS does not sell single-GPU H100/H200/B200 SKUs** — minimum is the 8×
+   chassis. Plan for multi-tenancy or Capacity Blocks at that tier.
+5. **Kimi-K2 does NOT fit 8× H100 80GB at FP8** — needs H200/B200 single-node.
+   p5.48xlarge is too small.
+6. **Llama 4 Community License** allows commercial use only below 700M MAU; not OSI.
+7. **g6e.xlarge ($1.861/hr) is the cheapest 48 GB single-GPU box on AWS** — the most
+   under-used SKU for 24–32B model serving. Often a better choice than g5.12xlarge
+   ($5.67/hr) for a single deployment.
+8. **L4 (g6) lower memory bandwidth than A10G**: 300 vs 600 GB/s. Despite newer
+   architecture and FP8, L4 typically loses to A10G on decode throughput.
+9. **All public BFCL/SWE-bench/LCB scores are FP16/BF16/FP8** — quantized AWQ INT4
+   evals essentially absent; quality drop unmeasured for most candidates.
+10. **NVIDIA Dynamo offers essentially nothing for a single GPU**. Multi-node value;
+    on g5.xlarge / g6e.xlarge use vLLM directly.
 
 ## Open questions still worth investigating
 
-- **Qwen3-Coder family** (Feb 2026) — does it actually deliver >70% SWE-bench Verified? When does an A10G-fitting variant land?
-- **Real measured AWQ INT4 throughput on A10G** for each candidate — no public per-model numbers.
-- **τ-bench** scores for Hermes-3-8B / Granite-3.3 / Mistral-Small-3.2 — closer to real agentic performance than BFCL.
-- **Hermes-4-8B**: is one coming? The 8B gap is the only friction in the Nous lineup for A10G deployment.
+- **Real measured AWQ INT4 throughput on A10G / L4 / L40S** for each candidate —
+  no public per-model numbers.
+- **Devstral-Small-2-2512 and Kimi-K2.6 BFCL v3/v4** — neither is published yet.
+- **gpt-oss community AWQ INT4 quality** on A10G — does the quant preserve SWE-bench scores?
+- **τ-bench** scores for the new candidates ([[models/qwen3-coder-30b-a3b]],
+  [[models/devstral-small]], [[models/glm-4.5-air]]) — closer to real agentic
+  performance than BFCL.
+- **GLM-4.5-Air vs GLM-4.6** — Z.ai released 4.6; impact on Air-tier model not
+  yet documented.
 
 ## Sources
+
 - [[sources/aws-ec2-pricing-2026-05]]
+- [[sources/aws-extended-gpu-pricing-2026-05]]
 - [[sources/nvidia-a10g-specs]]
+- [[sources/nvidia-l4-l40s-specs]]
 - [[sources/nvidia-dynamo-readme]]
 - [[sources/vllm-tool-calling-docs]]
 - [[sources/vllm-quantization-docs]]
 - [[sources/bfcl-leaderboard-2026-05]]
 - [[sources/code-benchmarks-2026-05]]
+- [[sources/qwen3-coder-cards]]
+- [[sources/qwen3-dense-cards]]
+- [[sources/deepseek-v3-r1-family]]
+- [[sources/llama-4-cards]]
+- [[sources/glm-4.5-cards]]
+- [[sources/kimi-k2-cards]]
+- [[sources/gpt-oss-cards]]
+- [[sources/devstral-small-cards]]

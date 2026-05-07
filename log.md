@@ -63,3 +63,63 @@ All 22 wiki pages were updated with verified numbers and `[Source: [[sources/...
 - 1 overview
 - 1 index
 - 17 source pages (10 standalone + 7 model-family consolidated)
+
+## [2026-05-07] ingest | AWS GPU spectrum + frontier open-source models expansion
+
+Broadened the wiki beyond the original A10G-locked scope. Ingested AWS GPU
+families G4dn / G6 / G6e / P6-B200 (G5 / P4 / P5 already covered) and the major
+open-source LLM releases since the first sweep: Qwen3 / Qwen3-Coder, DeepSeek
+V3.1 + R1, Llama 4 Scout/Maverick, GLM-4.5 / 4.5-Air, Kimi K2 / K2.5 / K2.6,
+OpenAI gpt-oss-20b / 120b, Mistral Devstral / Devstral-2.
+
+Sources added (raw → wiki/sources):
+- raw/aws-g4dn-instance-types.md, raw/aws-g6-instance-types.md, raw/aws-g6e-instance-types.md, raw/aws-p6-b200-instance.md, raw/nvidia-l4-l40s-datasheet.md
+- raw/qwen3-coder-cards.md, raw/qwen3-dense-cards.md
+- raw/deepseek-v3-r1-family.md
+- raw/llama-4-cards.md
+- raw/glm-4.5-cards.md
+- raw/kimi-k2-cards.md
+- raw/gpt-oss-cards.md
+- raw/devstral-small-cards.md
+- wiki/sources/aws-extended-gpu-pricing-2026-05.md
+- wiki/sources/nvidia-l4-l40s-specs.md
+- wiki/sources/qwen3-coder-cards.md, wiki/sources/qwen3-dense-cards.md
+- wiki/sources/deepseek-v3-r1-family.md
+- wiki/sources/llama-4-cards.md
+- wiki/sources/glm-4.5-cards.md
+- wiki/sources/kimi-k2-cards.md
+- wiki/sources/gpt-oss-cards.md
+- wiki/sources/devstral-small-cards.md
+
+Model pages added:
+- wiki/models/qwen3-coder-30b-a3b.md (A10G/L40S sweet spot, supersedes Qwen2.5-Coder for new deploys)
+- wiki/models/qwen3-coder-480b.md (Apache-2.0 frontier code, p5e/p6 only)
+- wiki/models/qwen3-32b.md (Apache-2.0 dense hybrid reasoning)
+- wiki/models/devstral-small.md (Apache-2.0 24B, SWE-V 53.6→68; replaces Codestral-22B for commercial use)
+- wiki/models/glm-4.5-air.md (MIT 106B/12B MoE; g6e.12xlarge sweet spot)
+- wiki/models/llama-4-scout.md (Llama 4 community, 109B/17B MoE)
+- wiki/models/deepseek-v3.1.md (MIT 671B/37B; SWE-V 66.0; needs H200/B200)
+- wiki/models/kimi-k2.md (mod-MIT 1T/32B; K2.6 SWE-V **80.2** — open-source frontier)
+- wiki/models/gpt-oss-20b.md (Apache-2.0 21B/3.6B MXFP4)
+- wiki/models/gpt-oss-120b.md (Apache-2.0 117B/5.1B MXFP4)
+
+Hardware/landscape pages:
+- wiki/hardware/aws-gpu-landscape.md (NEW master menu — full G4dn/G5/G6/G6e/P4/P4de/P5/P5e/P5en/P6 table with sm levels and quant compatibility)
+- wiki/hardware/g6e-l40s.md (NEW deep dive on g6e.xlarge — cheapest 48 GB single-GPU AWS box)
+- wiki/hardware/multi-gpu-options.md (rewritten — defers pricing to landscape page; adds model-size → smallest-AWS-box decision table)
+
+Comparison artifacts:
+- wiki/comparisons/models-by-budget.md (NEW — 6 budget tiers from $0.53/hr to $113.93/hr with best-tool-calling / best-code / best-SWE-V picks per tier)
+- wiki/comparisons/tool-calling-models-on-a10g.md (updated — Qwen3-Coder-30B-A3B and Devstral-Small added as new A10G defaults; multi-GPU section extended; recommendations refreshed)
+
+Index + overview:
+- wiki/overview.md (broadened scope; added budget-tier table; refreshed candidate landscape; new pitfalls/caveats)
+- index.md (split Models into A10G-class vs Multi-GPU/frontier; tagged NEW entries; added all new sources)
+
+Key insights surfaced this round:
+1. **g6e.xlarge ($1.861/hr, L40S 48 GB) is the most under-used SKU on AWS** for LLM inference — unlocks 24–32B at FP16/FP8 single-GPU.
+2. **AWS sells single-GPU only at 16/24/48 GB** — A100/H100/H200/B200 are 8× chassis only. No middle ground between L40S 48 GB and an 8× H100 box.
+3. **MXFP4 weights (gpt-oss) require sm_90+** — on Ampere/Ada vLLM dequantizes to BF16 (~2× VRAM), often defeating the quantization benefit. Practical native AWS = p5+/p6.
+4. **Kimi-K2 does NOT fit p5.48xlarge** at FP8 — needs H200 (p5e/p5en) or B200 (p6-b200). This is the single sharpest budget cliff at the top of the AWS lineup.
+5. **Qwen2.5-Coder is superseded by Qwen3-Coder** for new deploys; **Codestral 22B is superseded by Devstral-Small** for commercial use. Both successors are Apache-2.0 with mainline vLLM parsers.
+6. **Open-source SWE-bench frontier (May 2026)**: Kimi-K2.6 80.2 > Qwen3-Coder-480B 66.5 ≈ DeepSeek-V3.1 66.0 > GLM-4.5 64.2 > Devstral-Small-2 68 (24B!) > gpt-oss-20b high 60.7. Devstral and gpt-oss-20b are remarkable: small footprints with frontier-tier scores.
