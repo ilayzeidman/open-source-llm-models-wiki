@@ -24,9 +24,11 @@ multi-node deployment.
   (R1 not function-call tuned).
 - vLLM: `--tool-call-parser deepseek_v3` (mainline since 0.7.x); for R1 use
   `--reasoning-parser deepseek_r1`.
-- AWS fit: needs **p5e/p5en** (8× H200 = 1.1 TB) for native FP8 with headroom,
-  or p5.48xlarge (8× H100 = 640 GB) — tight at FP8. Fits comfortably on p6-b200.
-  **Cannot run on any G-family instance**, even at INT4 (~340 GB).
+- AWS fit: 671B × 1 byte (FP8) ≈ **671 GB weights**. 8× H100 80GB = 640 GB
+  → p5.48xlarge **does NOT fit FP8 weights**; smallest native-FP8 single-node is
+  **p5e/p5en** (8× H200 = 1.13 TB) or **p6-b200.48xlarge** (8× B200 = 1.44 TB).
+  AWQ INT4 (~340 GB) fits **p4de.24xlarge** (640 GB NVLink) or **g6e.48xlarge**
+  (384 GB PCIe). Cannot run on any g6e SKU smaller than 8× L40S.
 
 ## Pages updated on ingest
 

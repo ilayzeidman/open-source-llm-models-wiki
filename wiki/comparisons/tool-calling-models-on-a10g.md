@@ -1,7 +1,7 @@
 ---
 tags: [comparison, master-table]
 last_updated: 2026-05-07
-source_count: 12
+source_count: 17
 ---
 
 # Tool-Calling & Code Models on A10G — Master Comparison
@@ -55,7 +55,7 @@ All numbers below are from official primary sources (HF model cards, tech report
 | [[models/qwen2.5-coder-32b\|Qwen2.5-Coder-32B]] | 32B | AWQ INT4 80K ctx | **g6e.xlarge** | **$1.861** | **single-GPU 48 GB beats g5.12xl** |
 | [[models/qwen3-coder-30b-a3b\|Qwen3-Coder-30B-A3B]] | 31B MoE | FP8 256K ctx | g6e.xlarge | $1.861 | full quality single-GPU |
 | [[models/qwen2.5-coder-32b\|Qwen2.5-Coder-32B]] | 32B | TP=2 INT8 or TP=4 FP16 | g5.12xlarge | $5.672 | full-quality 32B coder |
-| [[models/glm-4.5-air]] | 106B/12B MoE | FP8 TP=2 | g6e.12xlarge | $10.493 | MIT, SWE-V 64, TAU 70 |
+| [[models/glm-4.5-air]] | 106B/12B MoE | FP8 TP=4 | g6e.12xlarge | $10.493 | MIT; parent GLM-4.5 SWE-V 64.2 / TAU 70.1 (Air-specific unpublished) |
 | [[models/llama-3.3-70b-instruct\|Llama-3.3-70B-Instruct]] | 70B | TP=8 AWQ INT4 | g5.48xlarge | $16.288 | cheapest 70B fit (PCIe) |
 | [[models/llama-3.3-70b-instruct\|Llama-3.3-70B-Instruct]] | 70B | TP=8 FP16 (NVLink) | p4d.24xlarge | $32.7726 | best Ampere/NVLink latency |
 | Hermes-4-70B | 70B | TP=8 AWQ INT4 | g5.48xlarge | $16.288 | Hermes specialist scaled up |

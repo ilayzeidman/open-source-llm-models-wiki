@@ -21,17 +21,17 @@ between Qwen3-Coder-30B-A3B (smaller, A10G fit) and Qwen3-Coder-480B / DeepSeek-
 | Box | GPUs | Quant | Weights | Verdict |
 |---|---|---|---:|---|
 | g6e.xlarge | 1× L40S 48GB | AWQ INT4 | ~53 GB | ❌ exceeds 48 GB by ~5 GB |
-| g6e.12xlarge | 4× L40S | FP8 (TP=2 unused) | ~106 GB | ✅ fits TP=2, 96 GB headroom |
-| g6e.12xlarge | 4× L40S | AWQ INT4 (TP=4) | ~13 GB/GPU | ✅ generous ctx |
-| g6e.48xlarge | 8× L40S | FP8 (TP=8) | ~13 GB/GPU | ✅ best L40S option |
-| p4d.24xlarge | 8× A100 40GB | AWQ INT4 (TP=8) | ~7 GB/GPU | ✅ NVLink fast |
-| p5.48xlarge slice | 2× H100 | FP8 (TP=2) | ~53 GB/GPU | ✅ but pays for 8 |
+| g6e.12xlarge | 4× L40S (192 GB) | FP8 TP=2 | ~53 GB/GPU | ❌ TP=2 only sees 96 GB; 106 GB FP8 weights don't fit |
+| g6e.12xlarge | 4× L40S (192 GB) | **FP8 TP=4** | ~27 GB/GPU | ✅ smallest single-node FP8 fit |
+| g6e.12xlarge | 4× L40S | AWQ INT4 TP=4 | ~13 GB/GPU | ✅ generous ctx |
+| g6e.48xlarge | 8× L40S | FP8 TP=8 | ~13 GB/GPU | ✅ headroom for batched serving |
+| p4d.24xlarge | 8× A100 40GB | AWQ INT4 TP=8 | ~7 GB/GPU | ✅ NVLink fast |
 
 ## Strengths
 
-- **64.2% SWE-bench Verified** (parent GLM-4.5; Air slightly lower but on the
-  same trajectory).
-- **TAU-Bench 70.1%** — among the strongest open-source tool-calling benchmarks.
+- Parent GLM-4.5 (355B) scores SWE-bench Verified **64.2%** and TAU-Bench **70.1%**.
+  GLM-4.5-Air aggregate 59.8 vs 63.2 for parent across 12 benchmarks; **no
+  Air-specific SWE-V or TAU number is published** *(unverified — needs source)*.
 - MIT license — fully commercial.
 - vLLM mainline `glm45` parser since 0.10.x.
 - 12B active → respectable decode throughput despite the 106B total.
@@ -47,7 +47,7 @@ between Qwen3-Coder-30B-A3B (smaller, A10G fit) and Qwen3-Coder-480B / DeepSeek-
 
 ```
 vllm serve zai-org/GLM-4.5-Air \
-  --tensor-parallel-size 2 \
+  --tensor-parallel-size 4 \
   --enable-auto-tool-choice --tool-call-parser glm45 \
   --max-model-len 32768
 ```
@@ -56,7 +56,7 @@ vllm serve zai-org/GLM-4.5-Air \
 
 | Box | $/hr | Quant | Note |
 |---|---:|---|---|
-| g6e.12xlarge | $10.49 | FP8 TP=2 | recommended sweet spot |
+| g6e.12xlarge | $10.49 | **FP8 TP=4** | recommended sweet spot |
 | g6e.48xlarge | $30.13 | FP8 TP=8 | full quality, scaled up |
 | p4d.24xlarge | $32.77 | AWQ INT4 TP=8 | NVLink + Marlin |
 

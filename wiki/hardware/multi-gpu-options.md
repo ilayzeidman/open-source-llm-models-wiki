@@ -49,7 +49,7 @@ single-card P-class). Updated:
 | 30B-A3B MoE (Qwen3-Coder) | g5.xlarge ($1.006) AWQ INT4 / g6e.xlarge FP8 | both fit |
 | 32B dense (Qwen3-32B, Qwen2.5-Coder-32B) | g6e.xlarge ($1.861) | AWQ INT4 generous ctx |
 | 70B dense (Llama-3.3-70B, Hermes-4-70B) | g5.48xlarge ($16.29) or g6e.12xlarge ($10.49) | AWQ INT4 TP=4–8 |
-| 106B/12B MoE (GLM-4.5-Air) | g6e.12xlarge ($10.49) | FP8 TP=2 |
+| 106B/12B MoE (GLM-4.5-Air) | g6e.12xlarge ($10.49) | FP8 TP=4 (TP=2 doesn't fit) |
 | 109B/17B MoE (Llama-4-Scout) | g6e.48xlarge ($30.13) | INT4 TP=8 |
 | 123B dense (Devstral-2-123B) | g6e.12xlarge ($10.49) | AWQ INT4 TP=4 |
 | 355B/32B MoE (GLM-4.5) | p4d.24xlarge ($32.77) | AWQ INT4 TP=8 |

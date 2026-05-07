@@ -1,5 +1,5 @@
 ---
-tags: [models, openai, mix-of-experts, reasoning, tool-calling, fp4]
+tags: [models, openai, mix-of-experts, reasoning, tool-calling, mxfp4]
 params: 21B
 active_params: 3.6B
 license: Apache-2.0
@@ -18,7 +18,9 @@ configurable reasoning effort. Strong tool calling — claimed near-o4-mini pari
 ## Fit on AWS GPUs (the MXFP4 caveat)
 
 **MXFP4 hardware requires sm_90+ (H100/H200/B200).** On Ampere/Ada (A10G/L4/L40S),
-vLLM dequantizes MXFP4 → BF16 at load, doubling VRAM:
+vLLM dequantizes MXFP4 → BF16 at load. The dequant only applies to MoE expert
+weights; dense layers stay BF16 throughout. Net runtime VRAM ≈ 24 GB (rather than
+the naive 21B × 2 = 42 GB BF16) *(approximate — verify per build)*:
 
 | Box | GPU | Mode | Weights | Verdict |
 |---|---|---|---:|---|
@@ -58,7 +60,7 @@ vllm serve openai/gpt-oss-20b \
 | Box | $/hr | Quant | Note |
 |---|---:|---|---|
 | g6e.xlarge | $1.861 | BF16 (dequant) | recommended single-GPU AWS |
-| p5.48xlarge slice | $98.32 / 8 ≈ $12.29 | MXFP4 native | only if H100 needed |
+| p5.48xlarge | $98.32 (full chassis; 7 GPUs idle unless multi-tenanted) | MXFP4 native | only if H100 strictly needed — AWS does not sell single-H100 slices |
 | g5.xlarge | $1.006 | community AWQ INT4 | fits but quality cost |
 
 ## Related

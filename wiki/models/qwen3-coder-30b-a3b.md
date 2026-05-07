@@ -29,8 +29,11 @@ wiki today.
 
 ## Strengths
 
-- SWE-bench Verified ~50.3% Pass@1 (Qwen blog) — the highest open-source score for
-  any model that fits a single 24 GB GPU.
+- SWE-bench Verified ~50.3% Pass@1 (Qwen blog) — among the strongest MoE scores
+  at the A10G fit tier. Note: dense [[models/devstral-small]] (24B) outscores at
+  53.6 (2507) → 68.0 (2-2512) for code-only workloads; Qwen3-Coder-30B-A3B's edge
+  is the combination of SWE-V plus mainline `qwen3_coder` tool-call parser plus
+  fast MoE decode (3.3B active).
 - BFCL v3 live-simple/multiple ~0.81 (Qwen3-Coder family).
 - 256K native context (1M with YaRN) — repo-scale agent loops feasible.
 - Apache-2.0 — fully commercial.

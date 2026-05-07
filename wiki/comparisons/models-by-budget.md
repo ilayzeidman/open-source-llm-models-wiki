@@ -71,8 +71,10 @@ Mistral-Small-3.2-24B at FP16 — all single-GPU.
 | g6.12xlarge | 4× L4 | $4.602 | cheapest TP=4 |
 | g6e.12xlarge | 4× L40S | $10.493 | **best mid-tier — 192 GB, FP8 native** |
 
-**Tier-3 winner for code+tools**: [[models/glm-4.5-air]] (106B/12B MoE) at FP8
-TP=2/4 on g6e.12xlarge — MIT license, **TAU-Bench 70.1**, vLLM `glm45` parser.
+**Tier-3 winner for code+tools**: [[models/glm-4.5-air]] (106B/12B MoE) at **FP8
+TP=4** on g6e.12xlarge — MIT license, parent GLM-4.5 scores SWE-V 64.2 / TAU-Bench
+70.1 (Air-specific numbers not published), vLLM `glm45` parser. Note: TP=2 does
+not fit (106 GB FP8 weights vs 96 GB for 2× L40S).
 
 **Tier-3 winner for cheapest 70B**: [[models/llama-3.3-70b-instruct]] AWQ INT4 TP=4
 on g6e.12xlarge ($10.49/hr).
@@ -95,7 +97,7 @@ on g6e.12xlarge ($10.49/hr).
 |---|---|---:|---|
 | p4de.24xlarge | 8× A100 80GB | $40.97 | NVLink, 640 GB |
 | p5.48xlarge | 8× H100 80GB | $98.32 | FP8 + MXFP4 native |
-| p5e/p5en.48xlarge | 8× H200 141GB | ~$45–$46 reserve | **Capacity Blocks**; H200 = 1.13 TB |
+| p5e/p5en.48xlarge | 8× H200 141GB | ~$39.8–$45.8 reserve | **Capacity Blocks**; H200 = 1.13 TB |
 | **p6-b200.48xlarge** | **8× B200 180GB** | **$113.93** | **FP4 native, 1.44 TB, fastest** |
 
 **Tier-5 winners** (open-source frontier):
@@ -115,7 +117,7 @@ on g6e.12xlarge ($10.49/hr).
 | < $1/hr | [[models/granite-3.1-8b\|Granite-3.3-8B]] (g4dn.xlarge / g6.xlarge) | [[models/qwen2.5-coder-7b]] (g4dn.xlarge) | [[models/devstral-small]] AWQ (g6.xlarge) |
 | $1–$2/hr | [[models/granite-3.1-8b\|Granite-3.3-8B]] (g5.xlarge) | [[models/qwen3-coder-30b-a3b]] (g5.xlarge AWQ) | [[models/devstral-small]] (g5.xlarge AWQ — SWE-V 53.6) |
 | $2–$5/hr | [[models/qwen3-coder-30b-a3b]] FP8 (g6e.xlarge) | [[models/qwen3-32b]] AWQ (g6e.xlarge) | [[models/devstral-small]] FP16 (g6e.xlarge — SWE-V 68 with v2-2512) |
-| $5–$15/hr | [[models/glm-4.5-air]] FP8 TP=2 (g6e.12xlarge) | [[models/qwen2.5-coder-32b]] FP16 TP=4 (g5.12xlarge) | [[models/glm-4.5-air]] (SWE-V ~62) |
+| $5–$15/hr | [[models/glm-4.5-air]] FP8 TP=4 (g6e.12xlarge) | [[models/qwen2.5-coder-32b]] FP16 TP=4 (g5.12xlarge) | [[models/glm-4.5-air]] (parent GLM-4.5 SWE-V 64.2; Air-specific unpublished) |
 | $15–$33/hr | [[models/llama-3.3-70b-instruct]] (g5.48xlarge) | [[models/devstral-small]]-2-123B (g6e.12xlarge) | [[models/qwen3-coder-480b]] INT4 (g6e.48xl, slow) |
 | $33–$115/hr | [[models/qwen3-coder-480b]] (p5e/p5en H200) | [[models/qwen3-coder-480b]] (p5e/p5en) | [[models/kimi-k2]] K2.6 (p5e/p5en or p6-b200) — **SWE-V 80.2%** |
 

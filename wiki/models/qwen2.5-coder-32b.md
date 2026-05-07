@@ -11,6 +11,12 @@ source_count: 3
 
 # Qwen2.5-Coder-32B-Instruct
 
+> **Superseded for new deployments by [[models/qwen3-coder-30b-a3b]]** (MoE) or
+> **[[models/qwen3-32b]]** (dense, hybrid reasoning), both with mainline
+> `qwen3_coder` / `hermes` parsers. Qwen2.5-Coder-32B retains the highest published
+> HumanEval (92.7) of the family but is no longer the default — see
+> [[hardware/g6e-l40s]] for fitting full FP16 on a single L40S.
+
 Alibaba's flagship open-source code model at release. Reportedly competitive with frontier closed models on code tasks. **Tight fit on a single A10G** even at INT4.
 
 - HF: `Qwen/Qwen2.5-Coder-32B-Instruct` ([model card](https://huggingface.co/Qwen/Qwen2.5-Coder-32B-Instruct))

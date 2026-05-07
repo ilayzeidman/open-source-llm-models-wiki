@@ -40,7 +40,7 @@ Catalog of every page in the wiki. Update on every ingest. See [[AGENTS]] for co
 
 ## Models — Multi-GPU / frontier
 - [[wiki/models/llama-3.3-70b-instruct]] — Llama community; HE 88.4 / BFCL V2 77.3; multi-GPU only
-- [[wiki/models/glm-4.5-air]] — **NEW** MIT 106B/12B MoE; SWE-V ~62; TAU-Bench 70.1; vLLM `glm45` parser
+- [[wiki/models/glm-4.5-air]] — **NEW** MIT 106B/12B MoE; parent GLM-4.5 SWE-V 64.2 / TAU 70.1 (Air-specific unpublished); vLLM `glm45` parser
 - [[wiki/models/llama-4-scout]] — **NEW** Llama 4 Community 109B/17B MoE; 10M ctx; multimodal
 - [[wiki/models/qwen3-coder-480b]] — **NEW** Apache-2.0 480B/35B MoE; SWE-V 66.5; flagship Apache code
 - [[wiki/models/deepseek-v3.1]] — **NEW** MIT 671B/37B MoE; SWE-V 66.0; native FP8

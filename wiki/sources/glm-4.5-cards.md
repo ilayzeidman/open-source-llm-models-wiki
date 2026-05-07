@@ -19,9 +19,10 @@ agent model and a strong fit for AWS g6e multi-GPU.
 - **GLM-4.5-Air**: 106B total / 12B active MoE. MIT. Aggregate score 59.8 across
   12 benchmarks (vs 63.2 for full GLM-4.5).
 - vLLM tool-call parser: **`glm45`** (mainline since 0.10.x).
-- Fit: GLM-4.5-Air FP8 ≈ 106 GB → **2× L40S TP=2 on g6e.12xlarge ($10.49/hr)** is
-  the cheapest single-node fit. AWQ INT4 ≈ 53 GB might fit single L40S 48 GB
-  (very tight) — practical setup is 2× L40S.
+- Fit: GLM-4.5-Air FP8 ≈ 106 GB → **does NOT fit 2× L40S (96 GB)**. Smallest
+  single-node FP8 fit is **TP=4 on g6e.12xlarge** (4× L40S = 192 GB, ~27 GB/GPU).
+  AWQ INT4 ≈ 53 GB exceeds a single L40S 48 GB by ~5 GB → also needs ≥2 GPUs;
+  cleanest is INT4 TP=4 on g6e.12xlarge.
 
 ## Pages updated on ingest
 

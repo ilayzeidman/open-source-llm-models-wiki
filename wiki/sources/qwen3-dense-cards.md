@@ -30,4 +30,4 @@ toggles between explicit `<think>` chain-of-thought and direct response via
 - [[models/qwen3-32b]] — new
 - [[concepts/tool-selection]] — Qwen3 BFCL v3 = 70.8 (flagship)
 - [[concepts/benchmarks]] — note BFCL v3 + v4 are now leading metrics for tool calling
-- [[comparisons/tool-calling-models-on-a10g]] — added Qwen3-32B and Qwen3-14B rows
+- [[comparisons/tool-calling-models-on-a10g]] — added Qwen3-32B row

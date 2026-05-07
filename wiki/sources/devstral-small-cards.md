@@ -21,7 +21,7 @@ SWE-bench score" combination in the wiki.
 - vLLM serving: `--tool-call-parser mistral --tokenizer_mode mistral
   --config_format mistral --load_format mistral`.
 - Fit: 24B AWQ INT4 ~13 GB → comfortably single A10G; 123B AWQ INT4 ~65 GB →
-  single H100 80 GB or 2× L40S TP=2 (g6e.12xlarge).
+  single H100 80 GB or TP=4 across 4× L40S on g6e.12xlarge.
 
 ## Why Devstral matters for this wiki
 

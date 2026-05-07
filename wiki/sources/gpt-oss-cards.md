@@ -1,5 +1,5 @@
 ---
-tags: [source, models, openai, mix-of-experts, fp4]
+tags: [source, models, openai, mix-of-experts, mxfp4]
 source_path: raw/gpt-oss-cards.md
 source_url: https://openai.com/index/introducing-gpt-oss/
 ingested: 2026-05-07

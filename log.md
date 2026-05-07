@@ -122,4 +122,4 @@ Key insights surfaced this round:
 3. **MXFP4 weights (gpt-oss) require sm_90+** — on Ampere/Ada vLLM dequantizes to BF16 (~2× VRAM), often defeating the quantization benefit. Practical native AWS = p5+/p6.
 4. **Kimi-K2 does NOT fit p5.48xlarge** at FP8 — needs H200 (p5e/p5en) or B200 (p6-b200). This is the single sharpest budget cliff at the top of the AWS lineup.
 5. **Qwen2.5-Coder is superseded by Qwen3-Coder** for new deploys; **Codestral 22B is superseded by Devstral-Small** for commercial use. Both successors are Apache-2.0 with mainline vLLM parsers.
-6. **Open-source SWE-bench frontier (May 2026)**: Kimi-K2.6 80.2 > Qwen3-Coder-480B 66.5 ≈ DeepSeek-V3.1 66.0 > GLM-4.5 64.2 > Devstral-Small-2 68 (24B!) > gpt-oss-20b high 60.7. Devstral and gpt-oss-20b are remarkable: small footprints with frontier-tier scores.
+6. **Open-source SWE-bench frontier (May 2026)**: Kimi-K2.6 80.2 > Devstral-Small-2-2512 68.0 (24B!) > Qwen3-Coder-480B 66.5 ≈ DeepSeek-V3.1 66.0 > GLM-4.5 64.2 > gpt-oss-20b high 60.7. Devstral and gpt-oss-20b are remarkable: small footprints with frontier-tier scores.

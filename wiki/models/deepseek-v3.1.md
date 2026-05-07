@@ -18,13 +18,16 @@ open-source model to clear 60% on SWE-bench Verified agent-mode.
 
 | Box | GPUs | Mode | Verdict |
 |---|---|---|---|
-| p5.48xlarge | 8× H100 80GB (640 GB) | FP8 (~480 GB weights) | ⚠ tight, no headroom for KV at 128K |
-| p5e.48xlarge | 8× H200 141GB (1.1 TB) | FP8 / BF16 | ✅✅ comfortable |
+| p5.48xlarge | 8× H100 80GB (640 GB) | FP8 (~671 GB weights) | ❌ FP8 weights exceed 640 GB; need INT4 quant or larger box |
+| p4de.24xlarge | 8× A100 80GB (640 GB) | AWQ INT4 (~340 GB) | ✅ NVLink, room for KV |
+| p5e.48xlarge | 8× H200 141GB (1.13 TB) | FP8 / BF16 | ✅✅ smallest single-node FP8 fit |
 | p5en.48xlarge | 8× H200 141GB | FP8 / BF16 | ✅✅ comfortable |
 | p6-b200.48xlarge | 8× B200 180GB (1.44 TB) | FP8 / FP4 | ✅✅✅ best latency |
 | g6e.48xlarge | 8× L40S 48GB (384 GB) | AWQ INT4 (~340 GB) | ⚠ borderline; PCIe TP=8 |
 
-**Cannot run on any G-class without aggressive INT4 + tight context.**
+**FP8 native single-node fit requires p5e/p5en (H200) or p6-b200.** p5.48xlarge
+(H100) is too small for FP8; use AWQ INT4 on p4de or g6e.48xlarge if cost-sensitive.
+Cannot run on any G-class smaller than g6e.48xlarge.
 
 ## Strengths
 
@@ -48,8 +51,9 @@ vllm serve deepseek-ai/DeepSeek-V3.1 \
 
 | Box | $/hr | $/month (24×7) | Notes |
 |---|---:|---:|---|
-| p5.48xlarge | $98.32 | ~$71,800 | tight FP8 fit |
-| p5e/p5en.48xlarge | Capacity Blocks (~$45/hr+) | ~$33k+ reserve | recommended |
+| p4de.24xlarge | $40.97 | ~$29,900 | AWQ INT4 TP=8, NVLink |
+| p5.48xlarge | $98.32 | ~$71,800 | INT4 only (FP8 doesn't fit) |
+| p5e/p5en.48xlarge | Capacity Blocks (~$39.8–$45.8 reserve) | ~$29k–$33k+ reserve | recommended FP8 |
 | p6-b200.48xlarge | $113.93 | ~$83,200 | fastest |
 
 ## Related

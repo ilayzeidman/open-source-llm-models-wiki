@@ -128,7 +128,7 @@ single-GPU you must rent an 8× P-class chassis.
 
 ## Decision tree (single-node)
 
-1. **Cost-minimal, model ≤ 8B**: g4dn.xlarge ($0.526) at AWQ INT4 → [[models/qwen3-8b]]-class, [[models/granite-3.1-8b]], [[models/hermes-3-llama-3.1-8b]]
+1. **Cost-minimal, model ≤ 8B**: g4dn.xlarge ($0.526) at AWQ INT4 → Qwen3-8B-class, [[models/granite-3.1-8b]], [[models/hermes-3-llama-3.1-8b]], [[models/llama-3.1-8b-instruct]]
 2. **Wiki baseline, ≤ 24B**: g5.xlarge ($1.006) → [[models/qwen3-coder-30b-a3b]], [[models/devstral-small]], [[models/granite-3.1-8b]]
 3. **Cheaper baseline, FP8 OK**: g6.xlarge ($0.80) — beware lower memory bandwidth
 4. **One GPU at 48 GB**: g6e.xlarge ($1.861) → [[models/devstral-small]] FP16, [[models/qwen3-32b]] AWQ comfortable, [[models/qwen3-coder-30b-a3b]] FP8

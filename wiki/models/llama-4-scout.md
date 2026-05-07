@@ -20,7 +20,8 @@ context**. Smallest single-box-deployable Llama 4 variant.
 |---|---|---:|---|
 | 1× H100 80GB (p5 slice) | INT4 on-the-fly | ~55 GB | ✅ Meta's reference fit |
 | g6e.xlarge | INT4 | ~55 GB | ❌ exceeds 48 GB |
-| g6e.12xlarge | FP8 TP=2 | ~109 GB | ⚠ close to 96 GB cap — use TP=4 |
+| g6e.12xlarge | FP8 TP=2 | ~109 GB | ❌ exceeds 96 GB cap (2× L40S) |
+| g6e.12xlarge | **FP8 TP=4** | ~28 GB/GPU | ✅ smallest single-node FP8 fit (4× L40S = 192 GB) |
 | g6e.48xlarge | INT4 TP=8 | ~7 GB/GPU | ✅ comfortable |
 | p4d.24xlarge | BF16 TP=8 | ~218 GB | ✅ NVLink, full quality |
 

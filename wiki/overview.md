@@ -1,7 +1,7 @@
 ---
 tags: [overview]
 last_updated: 2026-05-07
-source_count: 14
+source_count: 17
 ---
 
 # Overview
@@ -44,7 +44,7 @@ open-source model tiers from 7B to 1T parameters. See
 | < $1/hr (T4/L4) | $0.53–$0.80 | [[models/granite-3.1-8b\|Granite-3.3-8B]] | [[models/qwen2.5-coder-7b]] | [[models/devstral-small]] AWQ |
 | $1–$2/hr (A10G **baseline**) | $1.006 | [[models/granite-3.1-8b\|Granite-3.3-8B]] | [[models/qwen3-coder-30b-a3b]] AWQ | [[models/devstral-small]] (SWE-V 53.6) |
 | $2–$5/hr (L40S 48GB) | $1.861–$3.0 | [[models/qwen3-coder-30b-a3b]] FP8 | [[models/qwen3-32b]] / [[models/devstral-small]] FP16 | [[models/devstral-small]]-2 (SWE-V 68) |
-| $5–$15/hr (PCIe TP) | $5.67–$10.5 | [[models/glm-4.5-air]] FP8 TP=2 | [[models/qwen2.5-coder-32b]] FP16 TP=4 | [[models/glm-4.5-air]] |
+| $5–$15/hr (PCIe TP) | $5.67–$10.5 | [[models/glm-4.5-air]] FP8 TP=4 | [[models/qwen2.5-coder-32b]] FP16 TP=4 | [[models/glm-4.5-air]] |
 | $15–$33/hr (8× G or NVLink) | $16.29–$32.77 | [[models/llama-3.3-70b-instruct]] | [[models/devstral-small]]-2-123B | [[models/qwen3-coder-480b]] INT4 |
 | $33–$115/hr (P5/P6) | $40.97–$113.93 | [[models/qwen3-coder-480b]] | [[models/qwen3-coder-480b]] / [[models/kimi-k2]] | [[models/kimi-k2]] K2.6 (**SWE-V 80.2**) |
 
@@ -94,7 +94,7 @@ Mistral-Small-3.2-24B at FP16 with KV headroom, and any 32B AWQ INT4 with 80K ct
 ### Multi-GPU PCIe (g6e.12xlarge / g5.48xlarge)
 
 Adds: [[models/llama-3.3-70b-instruct]], **[[models/glm-4.5-air]]** (106B/12B MoE,
-MIT, SWE-V 64.2), Devstral-2-123B, Hermes-4-70B, Llama-4-Scout INT4.
+MIT; parent GLM-4.5 SWE-V 64.2 / TAU 70.1), Devstral-2-123B, Hermes-4-70B, Llama-4-Scout INT4.
 
 ### NVLink / multi-node (p4d / p5 / p5e / p6)
 
@@ -110,7 +110,7 @@ Adds the open-source frontier: **[[models/deepseek-v3.1]]** (671B/37B, SWE-V 66.
    wiki entries.
 2. **Codestral 22B is superseded by Devstral-Small** for commercial use — same
    Mistral lineage, **Apache-2.0** instead of MNPL.
-3. **MXFP4 weights** ([[models/gpt-oss-*]]) require Hopper or newer (sm_90+).
+3. **MXFP4 weights** ([[models/gpt-oss-20b]] / [[models/gpt-oss-120b]]) require Hopper or newer (sm_90+).
    On A10G/L4/L40S, vLLM dequantizes to BF16 (≈ 2× VRAM). Practical native AWS
    target = p5+ / p6-b200.
 4. **AWS does not sell single-GPU H100/H200/B200 SKUs** — minimum is the 8×
