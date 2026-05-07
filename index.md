@@ -51,6 +51,7 @@ Catalog of every page in the wiki. Update on every ingest. See [[AGENTS]] for co
 ## Comparisons
 - [[wiki/comparisons/tool-calling-models-on-a10g]] — original master table: A10G-locked
 - [[wiki/comparisons/models-by-budget]] — **NEW** budget-tiered: best model per $/hr bracket across the full AWS GPU spectrum
+- [[wiki/comparisons/g6e-xlarge-deployment-recipe]] — **NEW** copy-paste deployment spec: g6e.xlarge + Qwen3-Coder-30B-A3B FP8 (primary) / Devstral-Small FP8 (agentic)
 
 ## Sources
 - [[wiki/sources/aws-ec2-pricing-2026-05]] — AWS G5/P4/P5 on-demand pricing, us-east-1, May 2026

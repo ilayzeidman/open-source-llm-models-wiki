@@ -60,6 +60,30 @@ client → │ Dynamo frontend (HTTP, OpenAI-compatible) │
             └────── NIXL ───────┘   ← KV-cache transfer
 ```
 
+## Operational gotcha: `/v1/models` answers empty during startup
+
+The `dynamo.frontend` HTTP service comes up in seconds — well before any
+worker has finished pulling or loading weights. Until a `dynamo.vllm`
+worker registers itself in etcd, the frontend answers
+`GET /v1/models` with HTTP **200** and `{"object":"list","data":[]}`.
+
+Naive readiness probes that test for "HTTP 200 on `/v1/models`" therefore
+fire as ready while the engine is still loading (and may yet fail the
+KV-cache check; see [[concepts/kv-cache-and-context-length]]). For an
+operationally meaningful readiness probe, require the response's `data`
+array to be non-empty:
+
+```bash
+# good — only true once a worker has registered the model in etcd
+curl -fsS http://localhost:8000/v1/models | grep -q '"id"'
+```
+
+This matters because the worker's startup is the slow part: image pull
+(~5–10 min from NGC), HuggingFace weight download (~10–30 min for 30 B+
+models), then vLLM engine init + torch.compile (~1–3 min) + the
+KV-cache check. The frontend's "readiness" tells you nothing about that
+chain.
+
 ## Where to read further
 
 - The hosted docs at `docs.nvidia.com/dynamo/...` returned 404s during research; the GitHub README is the most reliable architecture reference.
@@ -68,6 +92,7 @@ client → │ Dynamo frontend (HTTP, OpenAI-compatible) │
 - [[infrastructure/vllm]]
 - [[hardware/a10g-g5xlarge]]
 - [[hardware/multi-gpu-options]]
+- [[concepts/kv-cache-and-context-length]]
 
 ## Sources
 - [[sources/nvidia-dynamo-readme]]

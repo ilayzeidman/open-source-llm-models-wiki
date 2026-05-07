@@ -19,13 +19,19 @@ wiki today.
 
 ## Fit on AWS GPUs
 
-| GPU / box | Quant | Weights | Verdict |
-|---|---|---:|---|
-| 1× A10G (g5.xlarge / g5.2xlarge) | AWQ INT4 | ~17–18 GB | ✅ fits, ~30k usable ctx |
-| 1× L4 24GB (g6.xlarge) | AWQ INT4 | ~17–18 GB | ✅ fits, decode-bound on 300 GB/s bw |
-| 1× L40S 48GB (g6e.xlarge) | AWQ INT4 | ~17–18 GB | ✅✅ comfortable, full 256K ctx |
-| 1× L40S 48GB (g6e.xlarge) | FP8 | ~31 GB | ✅ fits with usable ctx |
-| 1× H100 80GB (p5 slice) | BF16 | ~62 GB | ✅ comfortable |
+| GPU / box | Quant | Weights | Realistic `--max-model-len` | Verdict |
+|---|---|---:|---:|---|
+| 1× A10G (g5.xlarge / g5.2xlarge) | AWQ INT4 | ~17–18 GB | ~30 K | ✅ fits |
+| 1× L4 24GB (g6.xlarge) | AWQ INT4 | ~17–18 GB | ~30 K | ✅ fits, decode-bound on 300 GB/s bw |
+| 1× L40S 48GB (g6e.xlarge) | AWQ INT4 | ~17–18 GB | ~120 K+ | ✅✅ comfortable |
+| 1× L40S 48GB (g6e.xlarge) | FP8 | ~29 GB | **32 K** | ✅ fits — KV-cache budget caps context far below the 256 K headline |
+| 1× H100 80GB (p5 slice) | BF16 | ~62 GB | ~64 K | ✅ comfortable |
+| 1× H200 141 GB (p5e/p5en slice) | BF16 | ~62 GB | full 256 K | ✅✅ first SKU where the architectural max is serveable |
+
+The "Realistic max-model-len" column is bounded by **KV cache memory**, not
+total VRAM — see [[concepts/kv-cache-and-context-length]]. The 256 K
+headline is achievable only on a GPU with substantially more VRAM than the
+weights, or with weight-only quant (AWQ INT4) that frees KV budget.
 
 ## Strengths
 
@@ -56,8 +62,17 @@ vllm serve Qwen/Qwen3-Coder-30B-A3B-Instruct \
   --quantization awq_marlin
 ```
 
-- Sampling: T=0.7, top_p=0.8, top_k=20, rep_pen=1.05.
-- OOM symptom → drop `--max-model-len` to 32768 or lower.
+- Sampling defaults are auto-loaded from `generation_config.json`:
+  T=0.7, top_p=0.8, top_k=20, rep_pen=1.05.
+- The `--max-model-len 32768` value above is the **realistic** ceiling on
+  L40S 48 GB FP8, not just an OOM fallback — vLLM's
+  `_check_enough_kv_cache_memory` rejects engine startup at 131072 because
+  the per-request KV cache (~12 GB) exceeds the available KV budget (~10 GB)
+  after weights + framework overhead. See
+  [[concepts/kv-cache-and-context-length]] for the math.
+- Per-token KV size: 96 KB (48 layers × 2 × 4 KV heads × 128 head_dim × 2
+  bytes). Lower than dense [[models/qwen2.5-coder-32b]] (256 KB/token)
+  thanks to MoE's reduced layer count.
 
 ## Cost (AWS, on-demand, us-east-1)
 
@@ -74,6 +89,8 @@ vllm serve Qwen/Qwen3-Coder-30B-A3B-Instruct \
 - [[models/devstral-small]] (Apache-2.0 dense alternative)
 - [[infrastructure/vllm]], [[hardware/aws-gpu-landscape]]
 - [[comparisons/models-by-budget]]
+- [[comparisons/g6e-xlarge-deployment-recipe]]
+- [[concepts/kv-cache-and-context-length]]
 
 ## Sources
 

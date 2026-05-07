@@ -114,6 +114,16 @@ Smaller draft model proposes tokens, target model verifies. Useful for code gene
 | `--quantization` | None (autodetect) | force a method; explicit `awq_marlin`/`gptq_marlin` on Ampere |
 | `--kv-cache-dtype` | auto | `auto`/`fp8`/`fp8_e5m2`/`fp8_e4m3`/`int8` |
 
+### `--max-model-len` is bounded by KV cache, not VRAM
+
+vLLM V1 enforces `_check_enough_kv_cache_memory` at engine startup. If the
+configured `--max-model-len` doesn't fit one full-length request in the
+KV-cache budget *after* weights and framework overhead, the engine refuses
+to start. This is the single most common reason a "fits in VRAM" model
+won't serve at its model-card max context. The full math, per-model
+KV-per-token table, and the four levers when you don't fit are in
+[[concepts/kv-cache-and-context-length]].
+
 ## Tensor parallelism
 
 `--tensor-parallel-size N` splits weights across N GPUs. On g5 (PCIe Gen4 only) overhead is meaningful; on p4d/p5 (NVLink) it's nearly free. See [[hardware/multi-gpu-options]].
@@ -134,6 +144,7 @@ Smaller draft model proposes tokens, target model verifies. Useful for code gene
 - [[infrastructure/nvidia-dynamo]]
 - [[infrastructure/quantization]]
 - [[concepts/tool-selection]]
+- [[concepts/kv-cache-and-context-length]]
 
 ## Sources
 - [[sources/vllm-tool-calling-docs]]

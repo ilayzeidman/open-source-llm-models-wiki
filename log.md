@@ -123,3 +123,11 @@ Key insights surfaced this round:
 4. **Kimi-K2 does NOT fit p5.48xlarge** at FP8 — needs H200 (p5e/p5en) or B200 (p6-b200). This is the single sharpest budget cliff at the top of the AWS lineup.
 5. **Qwen2.5-Coder is superseded by Qwen3-Coder** for new deploys; **Codestral 22B is superseded by Devstral-Small** for commercial use. Both successors are Apache-2.0 with mainline vLLM parsers.
 6. **Open-source SWE-bench frontier (May 2026)**: Kimi-K2.6 80.2 > Devstral-Small-2-2512 68.0 (24B!) > Qwen3-Coder-480B 66.5 ≈ DeepSeek-V3.1 66.0 > GLM-4.5 64.2 > gpt-oss-20b high 60.7. Devstral and gpt-oss-20b are remarkable: small footprints with frontier-tier scores.
+
+## [2026-05-07] query | next box + model after g5.xlarge
+
+- Recommended **g6e.xlarge** ($1.861/hr, L40S 48 GB) as the next step from g5.xlarge.
+- Primary model: **Qwen3-Coder-30B-A3B FP8** (Apache-2.0, MoE 31B/3.3B, mainline `qwen3_coder` parser, full 256K ctx single-GPU).
+- Secondary model: **Devstral-Small-2-24B FP8** (Apache-2.0 dense, SWE-V 53.6 → 68.0; FP16 NOT viable on single L40S — only "just fits" weights with no KV).
+- Filed copy-paste deployment spec at [[comparisons/g6e-xlarge-deployment-recipe]] for handoff to a deploy agent.
+- Added entry to `index.md` under Comparisons.
