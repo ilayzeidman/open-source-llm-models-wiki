@@ -11,6 +11,10 @@ source_count: 3
 
 # Qwen2.5-Coder-14B-Instruct
 
+> **Superseded for new deployments by [[models/qwen3-coder-30b-a3b]]** — Apache-2.0
+> MoE 31B/3.3B with mainline `qwen3_coder` parser (fixes the flaky-`hermes`-parser
+> issue documented below), SWE-bench Verified ~50%, similar A10G AWQ INT4 fit.
+
 Alibaba's 14B code model. **The current sweet spot** for A10G — much stronger than 7B on real coding tasks while still leaving comfortable KV-cache budget at AWQ INT4.
 
 - HF: `Qwen/Qwen2.5-Coder-14B-Instruct` ([model card](https://huggingface.co/Qwen/Qwen2.5-Coder-14B-Instruct))

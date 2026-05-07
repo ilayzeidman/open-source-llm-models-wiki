@@ -11,6 +11,12 @@ source_count: 3
 
 # Codestral-22B-v0.1
 
+> **Superseded for commercial use by [[models/devstral-small]]** — Devstral-Small
+> is Apache-2.0 (vs Codestral's MNPL non-commercial), built on Mistral-Small-3.1
+> base, scores SWE-bench Verified 53.6 → 68.0, and ships with vLLM mainline
+> `mistral` parser. This page is retained for historical reference and any
+> non-commercial Codestral use.
+
 Mistral's code-specialized 22B model. Strong on code completion / fill-in-the-middle, multi-language. **License is the catch**: Mistral AI Non-Production License (MNPL) — strictly non-commercial. Commercial use requires a paid agreement with Mistral sales.
 
 - HF: `mistralai/Codestral-22B-v0.1` ([model card](https://huggingface.co/mistralai/Codestral-22B-v0.1))
