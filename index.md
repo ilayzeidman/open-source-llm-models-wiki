@@ -10,16 +10,32 @@ Catalog of every page in the wiki. Update on every ingest. See [[AGENTS]] for co
 - [[wiki/hardware/a10g-g5xlarge]] — A10G specs (70 TF FP16 dense, 600 GB/s, sm_86), g5.xlarge $1.006/hr, VRAM budget math
 - [[wiki/hardware/g6e-l40s]] — L40S 48 GB single-GPU deep dive; g6e.xlarge $1.861/hr — cheapest 48 GB box on AWS
 - [[wiki/hardware/multi-gpu-options]] — multi-GPU decision logic (TP/PP/EP), model-size → smallest single-node AWS box
+- [[wiki/hardware/aws-efa]] — **NEW** Elastic Fabric Adapter, bandwidth/EFA matrix per AWS GPU instance, NCCL-over-EFA setup; **g5 has no EFA**
 
 ## Infrastructure
-- [[wiki/infrastructure/vllm]] — vLLM 0.20.x features for tool calling and code; full parser table
-- [[wiki/infrastructure/nvidia-dynamo]] — what Dynamo adds (and why it's near-zero on a single GPU)
+- [[wiki/infrastructure/serving-stack-landscape]] — **NEW master menu** of every credible open-source LLM serving stack
+- [[wiki/infrastructure/vllm]] — vLLM 0.20.x features for tool calling and code; full parser table; multi-node section
+- [[wiki/infrastructure/nvidia-dynamo]] — what Dynamo adds; updated multi-node performance numbers and disagg link
+- [[wiki/infrastructure/triton-vs-dynamo]] — **NEW** Dynamo vs Dynamo-Triton (formerly Triton Inference Server) disambiguation
+- [[wiki/infrastructure/sglang]] — **NEW** RadixAttention + CFSM JSON; strong vLLM alternative on prefix-heavy/agentic workloads
+- [[wiki/infrastructure/tensorrt-llm]] — **NEW** NVIDIA peak performance; NVFP4/MXFP4 native; backend under Dynamo
+- [[wiki/infrastructure/lmdeploy]] — **NEW** AWQ-W4A16 + KV-quant + prefix cache simultaneously; "1.8× vLLM" on InternLM
+- [[wiki/infrastructure/tgi]] — **NEW** Hugging Face TGI; **maintenance mode** as of 2026 (HF recommends migrating)
+- [[wiki/infrastructure/ray-serve-llm]] — **NEW** Anyscale orchestration over vLLM; multi-LoRA, multi-model, autoscale
+- [[wiki/infrastructure/vllm-production-stack]] — **NEW** vLLM team's K8s reference impl; Helm + KV-aware router + LMCache
+- [[wiki/infrastructure/llm-d]] — **NEW** Red Hat–led K8s Operator + KServe Inference Gateway; precise prefix-aware routing
+- [[wiki/infrastructure/aibrix]] — **NEW** heterogeneous-GPU cluster control plane; high-density LoRA; distributed KV cache
+- [[wiki/infrastructure/leaderworkerset]] — **NEW** K8s API for multi-host TP+PP single-replica deployments (kubernetes-sigs/lws)
 - [[wiki/infrastructure/quantization]] — AWQ / GPTQ / FP8 / INT8 / GGUF / MXFP4 on Ampere/Ada/Hopper/Blackwell
 
 ## Concepts
 - [[wiki/concepts/tool-selection]] — function calling, parallel tools, BFCL sub-skills
 - [[wiki/concepts/code-generation]] — single-function vs repo-scale; current open-source state
 - [[wiki/concepts/benchmarks]] — BFCL, HumanEval+/MBPP+, LiveCodeBench, SWE-bench Verified, Aider, τ-bench
+- [[wiki/concepts/parallelism-strategies]] — **NEW** TP / PP / DP / EP decision rubric; vLLM's canonical multi-node rule
+- [[wiki/concepts/disaggregated-serving]] — **NEW** DistServe / Splitwise / Mooncake; productionized in Dynamo / vLLM PD-disagg / SGLang / llm-d
+- [[wiki/concepts/serving-performance-measurement]] — **NEW** TTFT/ITL/goodput/MBU; GenAI-Perf, MLPerf v5.0, traps
+- [[wiki/concepts/kv-cache-and-context-length]] — KV cache memory math; `--max-model-len` ceiling
 
 ## Models — A10G class (≤ 24 GB single GPU)
 - [[wiki/models/qwen2.5-coder-7b]] — Apache-2.0; HE 88.4 / LCB 18.2; sweet 7B code model — `hermes` parser flaky
@@ -50,8 +66,10 @@ Catalog of every page in the wiki. Update on every ingest. See [[AGENTS]] for co
 
 ## Comparisons
 - [[wiki/comparisons/tool-calling-models-on-a10g]] — original master table: A10G-locked
-- [[wiki/comparisons/models-by-budget]] — **NEW** budget-tiered: best model per $/hr bracket across the full AWS GPU spectrum
-- [[wiki/comparisons/g6e-xlarge-deployment-recipe]] — **NEW** copy-paste deployment spec: g6e.xlarge + Qwen3-Coder-30B-A3B FP8 (primary) / Devstral-Small FP8 (agentic)
+- [[wiki/comparisons/models-by-budget]] — budget-tiered: best model per $/hr bracket across the full AWS GPU spectrum
+- [[wiki/comparisons/g6e-xlarge-deployment-recipe]] — copy-paste deployment spec: g6e.xlarge + Qwen3-Coder-30B-A3B FP8 (primary) / Devstral-Small FP8 (agentic)
+- [[wiki/comparisons/serving-stacks-comparison]] — **NEW** when to pick vLLM vs SGLang vs TRT-LLM vs LMDeploy vs Production Stack vs llm-d vs AIBrix vs Ray Serve LLM
+- [[wiki/comparisons/scaling-1-to-5-machines]] — **NEW** practical recipe for scaling 1 → 2 → 5 g5.xlarge with multi-replica + prefix-aware routing
 
 ## Sources
 - [[wiki/sources/aws-ec2-pricing-2026-05]] — AWS G5/P4/P5 on-demand pricing, us-east-1, May 2026
@@ -81,3 +99,12 @@ Catalog of every page in the wiki. Update on every ingest. See [[AGENTS]] for co
 - [[wiki/sources/glm-4.5-cards]] — **NEW** GLM-4.5 / GLM-4.5-Air HF cards + ARC paper
 - [[wiki/sources/kimi-k2-cards]] — **NEW** Kimi-K2 / K2-Thinking / K2.5 / K2.6 cards
 - [[wiki/sources/gpt-oss-cards]] — **NEW** OpenAI gpt-oss-20b / gpt-oss-120b cards + MXFP4 hardware note
+- [[wiki/sources/serving-stacks-alternatives-2026-05]] — **NEW** all alternative LLM serving stacks (TRT-LLM, SGLang, TGI, LMDeploy, Ray Serve LLM, DeepSpeed-MII, Friendli, Aphrodite, llama.cpp, KServe, Production Stack, llm-d)
+- [[wiki/sources/vllm-distributed-serving-2026-05]] — **NEW** vLLM TP/PP/DP/EP CLI flags, multi-node recipes, V1 engine release
+- [[wiki/sources/nvidia-dynamo-multinode-2026-05]] — **NEW** Dynamo design docs, Planner, NIXL, KVBM, real-hardware GB200 NVL72 numbers
+- [[wiki/sources/disaggregated-serving-papers-2026-05]] — **NEW** DistServe / Splitwise / Mooncake papers
+- [[wiki/sources/k8s-llm-orchestration-2026-05]] — **NEW** LWS / llm-d / vLLM Production Stack / AIBrix on Kubernetes
+- [[wiki/sources/aws-efa-multinode-2026-05]] — **NEW** EFA bandwidth matrix per AWS GPU instance, NCCL-over-EFA setup
+- [[wiki/sources/sglang-distributed-2026-05]] — **NEW** SGLang multi-node + chunked PP (LMSYS Jan 2026) + bench_serving
+- [[wiki/sources/llm-serving-perf-metrics-2026-05]] — **NEW** TTFT / ITL / goodput / MBU / KV-cache-hit-rate definitions
+- [[wiki/sources/llm-serving-perf-tools-2026-05]] — **NEW** GenAI-Perf / vLLM bench / SGLang bench / LLMPerf / MLPerf v5.0

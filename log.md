@@ -131,3 +131,93 @@ Key insights surfaced this round:
 - Secondary model: **Devstral-Small-2-24B FP8** (Apache-2.0 dense, SWE-V 53.6 → 68.0; FP16 NOT viable on single L40S — only "just fits" weights with no KV).
 - Filed copy-paste deployment spec at [[comparisons/g6e-xlarge-deployment-recipe]] for handoff to a deploy agent.
 - Added entry to `index.md` under Comparisons.
+
+## [2026-05-08] ingest | alternative serving stacks + multi-machine scaling + perf measurement
+
+Broadened the wiki beyond the original vLLM + NVIDIA Dynamo focus. Added every
+credible open-source LLM serving stack (SGLang, TensorRT-LLM, LMDeploy, TGI,
+Ray Serve LLM, vLLM Production Stack, llm-d, AIBrix, LeaderWorkerSet),
+multi-machine scaling recipe (1 → 2 → 5 g5.xlarge), AWS EFA bandwidth matrix,
+multi-node serving performance measurement methodology (TTFT/ITL/goodput,
+GenAI-Perf, MLPerf v5.0).
+
+Sources added (raw → wiki/sources):
+- raw/serving-stacks-alternatives-2026-05.md
+- raw/vllm-distributed-serving-2026-05.md
+- raw/nvidia-dynamo-multinode-2026-05.md
+- raw/disaggregated-serving-papers-2026-05.md
+- raw/k8s-llm-orchestration-2026-05.md
+- raw/aws-efa-multinode-2026-05.md
+- raw/sglang-distributed-2026-05.md
+- raw/llm-serving-perf-metrics-2026-05.md
+- raw/llm-serving-perf-tools-2026-05.md
+- wiki/sources/serving-stacks-alternatives-2026-05.md
+- wiki/sources/vllm-distributed-serving-2026-05.md
+- wiki/sources/nvidia-dynamo-multinode-2026-05.md
+- wiki/sources/disaggregated-serving-papers-2026-05.md
+- wiki/sources/k8s-llm-orchestration-2026-05.md
+- wiki/sources/aws-efa-multinode-2026-05.md
+- wiki/sources/sglang-distributed-2026-05.md
+- wiki/sources/llm-serving-perf-metrics-2026-05.md
+- wiki/sources/llm-serving-perf-tools-2026-05.md
+
+Infrastructure pages added:
+- wiki/infrastructure/serving-stack-landscape.md (NEW master menu)
+- wiki/infrastructure/sglang.md (NEW)
+- wiki/infrastructure/tensorrt-llm.md (NEW)
+- wiki/infrastructure/lmdeploy.md (NEW)
+- wiki/infrastructure/tgi.md (NEW; flagged as maintenance mode)
+- wiki/infrastructure/triton-vs-dynamo.md (NEW; disambiguates rename)
+- wiki/infrastructure/ray-serve-llm.md (NEW)
+- wiki/infrastructure/vllm-production-stack.md (NEW)
+- wiki/infrastructure/llm-d.md (NEW)
+- wiki/infrastructure/aibrix.md (NEW)
+- wiki/infrastructure/leaderworkerset.md (NEW)
+
+Concept pages added:
+- wiki/concepts/parallelism-strategies.md (NEW; TP/PP/DP/EP rubric)
+- wiki/concepts/disaggregated-serving.md (NEW; DistServe/Splitwise/Mooncake)
+- wiki/concepts/serving-performance-measurement.md (NEW; goodput, GenAI-Perf, MLPerf, traps)
+
+Hardware pages added:
+- wiki/hardware/aws-efa.md (NEW)
+
+Comparison artifacts added:
+- wiki/comparisons/serving-stacks-comparison.md (NEW)
+- wiki/comparisons/scaling-1-to-5-machines.md (NEW; the user's specific question)
+
+Updates to existing pages:
+- wiki/overview.md (broadened; added scaling/serving-stack threads; new sources)
+- wiki/infrastructure/vllm.md (multi-node section; V1 engine; new related links)
+- wiki/infrastructure/nvidia-dynamo.md (rename callout; updated perf table; disagg link)
+- wiki/hardware/multi-gpu-options.md (multi-node vs multi-replica section; EFA caveat)
+- index.md (full update)
+
+Key insights surfaced this round:
+1. **g5 has no EFA**, making cross-node tensor parallelism non-viable on the
+   wiki's primary baseline. Multi-machine scaling on g5 = independent replicas
+   behind a KV-aware router. EFA is available on g6e and above.
+2. **Triton was renamed Dynamo-Triton** (March 2025); "Dynamo" brand now spans
+   two products (LLM-focused NVIDIA Dynamo + multi-framework Dynamo-Triton).
+3. **TGI is in maintenance mode**; HF officially recommends migration to vLLM /
+   SGLang / llama.cpp / MLX.
+4. **SGLang RadixAttention** materially outperforms vLLM on prefix-heavy /
+   agentic / RAG / multi-turn workloads (paper: "up to 6.4× higher
+   throughput"). LMSYS Jan 2026: chunked PP yields 3.31× prefill throughput
+   on DeepSeek-V3.1 vs TP8.
+5. **LMDeploy** is the AWQ-W4A16 specialist: "1.8× vLLM throughput" on
+   InternLM2-20B; supports AWQ + KV-quant + prefix cache simultaneously.
+   Tool-calling parser coverage is narrow (InternLM2.5, Llama 3.1 only).
+6. **Goodput, not throughput**, is the headline multi-node metric (DistServe
+   paper). Always measure under stated SLO; use open-loop load generation.
+7. **MLPerf Inference v5.0 SLOs** as defaults: Llama 3.1 405B: 99p TTFT ≤ 6s,
+   99p TPOT ≤ 175 ms; Llama 2 70B Interactive: 99p TPOT ≤ 40 ms, 99p TTFT
+   ≤ 450 ms.
+8. **llm-d KV-cache-aware routing**: precise prefix-aware routing yields
+   TTFT P90 = 0.542 s vs 31.083 s for approximate — a 57× win. Cached tokens
+   are 10× cheaper.
+9. **Real-hardware Dynamo at scale**: GB200 NVL72 + Dynamo+vLLM produces
+   12,587 tok/s/GPU vs 4,021 tok/s/GPU on a single B200 (SemiAnalysis
+   InferenceMAX) — ~3× per-GPU win from disaggregation.
+10. **Production Stack** is the canonical answer for "1 → 2 → 5 g5
+    machines" — Helm-deployable, prefix-aware routing, LMCache-integrated.
