@@ -221,3 +221,17 @@ Key insights surfaced this round:
    InferenceMAX) — ~3× per-GPU win from disaggregation.
 10. **Production Stack** is the canonical answer for "1 → 2 → 5 g5
     machines" — Helm-deployable, prefix-aware routing, LMCache-integrated.
+
+## [2026-05-08] note | beginner LLM-serving learning guide
+
+Added [[wiki/concepts/beginner-llm-serving-guide]] — a top-to-bottom learning
+path for someone new to LLM serving who wants to understand the wiki end-to-
+end. Mirrors the user-supplied 5-step study plan (foundations → serving-stack
+landscape → disaggregation theory → K8s orchestration → 1→2→5 machine
+synthesis), translated into beginner vocabulary with many ASCII diagrams.
+
+Pages touched:
+- wiki/concepts/beginner-llm-serving-guide.md (new)
+- index.md (added under Concepts)
+
+Pure synthesis page; no new claims or sources introduced.

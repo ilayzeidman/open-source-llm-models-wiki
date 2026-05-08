@@ -29,6 +29,7 @@ Catalog of every page in the wiki. Update on every ingest. See [[AGENTS]] for co
 - [[wiki/infrastructure/quantization]] — AWQ / GPTQ / FP8 / INT8 / GGUF / MXFP4 on Ampere/Ada/Hopper/Blackwell
 
 ## Concepts
+- [[wiki/concepts/beginner-llm-serving-guide]] — **NEW** beginner-friendly learning path through the wiki; many text diagrams; 5-step study plan
 - [[wiki/concepts/tool-selection]] — function calling, parallel tools, BFCL sub-skills
 - [[wiki/concepts/code-generation]] — single-function vs repo-scale; current open-source state
 - [[wiki/concepts/benchmarks]] — BFCL, HumanEval+/MBPP+, LiveCodeBench, SWE-bench Verified, Aider, τ-bench
