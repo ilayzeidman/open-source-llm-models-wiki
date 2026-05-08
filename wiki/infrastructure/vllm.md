@@ -1,12 +1,18 @@
 ---
 tags: [infrastructure, serving, vllm]
-last_updated: 2026-05-07
-source_count: 2
+last_updated: 2026-05-08
+source_count: 3
 ---
 
 # vLLM
 
-High-throughput LLM inference server, OpenAI-compatible API, paged-attention KV cache. The serving foundation under [[infrastructure/nvidia-dynamo]].
+High-throughput LLM inference server, OpenAI-compatible API, paged-attention
+KV cache. The serving foundation under [[infrastructure/nvidia-dynamo]] and
+the wiki's default engine. Alternatives that may fit specific workloads
+better: [[infrastructure/sglang]] (RadixAttention; agentic / prefix-heavy),
+[[infrastructure/lmdeploy]] (AWQ-W4A16 specialty),
+[[infrastructure/tensorrt-llm]] (NVFP4/MXFP4 native on Blackwell). The full
+landscape is at [[infrastructure/serving-stack-landscape]].
 
 **Latest stable: vLLM 0.20.1** (released 2026-05-03). Pinning recommendation: `vllm==0.20.1`. [Source: [[sources/vllm-quantization-docs]]]
 
@@ -128,6 +134,65 @@ KV-per-token table, and the four levers when you don't fit are in
 
 `--tensor-parallel-size N` splits weights across N GPUs. On g5 (PCIe Gen4 only) overhead is meaningful; on p4d/p5 (NVLink) it's nearly free. See [[hardware/multi-gpu-options]].
 
+## Multi-node distributed serving
+
+[Source: [[sources/vllm-distributed-serving-2026-05]]]
+
+vLLM's canonical multi-node rule:
+
+> "**The tensor parallel size should be the number of GPUs in each node, and
+> the pipeline parallel size should be the number of nodes.**"
+
+| Flag | Purpose |
+|---|---|
+| `--tensor-parallel-size N` | Shard each layer across N GPUs (intra-node, NVLink/PCIe) |
+| `--pipeline-parallel-size N` | Split layers across N stages (across slow links / multi-node) |
+| `--data-parallel-size N` | N independent model replicas |
+| `--data-parallel-size-local N` | DP ranks on this node |
+| `--data-parallel-address`, `--data-parallel-rpc-port` | Coordination endpoint |
+| `--data-parallel-start-rank N` | Rank offset on worker nodes |
+| `--data-parallel-backend ray` | Use Ray for DP launch |
+| `--enable-expert-parallel` | EP for MoE experts |
+| `--all2all-backend ...` | All-to-all kernel (deepep_high_throughput, deepep_low_latency, flashinfer_nvlink_*) |
+| `--distributed-executor-backend ray\|mp` | Ray vs multiprocessing |
+| `--nnodes`, `--node-rank`, `--master-addr`, `--headless` | Multiprocessing multi-node mode |
+| `--api-server-count N` | Scale OAI API workers (large DP) |
+
+**Multi-node recipe (multiprocessing, no Ray):**
+
+```bash
+# Head (rank 0)
+vllm serve /path/to/model --tensor-parallel-size 8 --pipeline-parallel-size 2 \
+  --nnodes 2 --node-rank 0 --master-addr <HEAD_IP>
+# Worker (rank 1)
+vllm serve /path/to/model --tensor-parallel-size 8 --pipeline-parallel-size 2 \
+  --nnodes 2 --node-rank 1 --master-addr <HEAD_IP> --headless
+```
+
+For TP/PP/DP/EP decision logic, see [[concepts/parallelism-strategies]].
+
+For when to use **multi-replica DP** (each replica fits a node) vs **multi-node
+TP+PP** (model > one node), see [[comparisons/scaling-1-to-5-machines]] —
+which also covers the AWS-specific constraint that g5 lacks EFA, making
+multi-node TP infeasible on the wiki's primary baseline.
+
+## V1 engine (Jan 2025+, default in vLLM ≥ 0.8.x)
+
+[Source: [[sources/vllm-distributed-serving-2026-05]]]
+
+Architectural changes:
+- `EngineCore` execution loop in separate process (multiprocessing).
+- Unified scheduler removes prefill/decode distinction — schedule is just
+  `{request_id: num_tokens}`.
+- Hash-based prefix caching on by default; "less than 1% decrease in
+  throughput even when the cache hit rate is 0%."
+- Persistent batch with NumPy input prep.
+- Symmetric TP architecture (scheduler decoupled from worker 0).
+- Piecewise CUDA graphs + FlashAttention 3.
+
+Headline: "V1 achieves up to 1.7× higher throughput compared to V0";
+"up to 24% improvement" on generation-heavy workloads (Red Hat blog on 0.8.1).
+
 ## 0.20 breaking changes (pin awareness)
 
 [Source: [[sources/vllm-quantization-docs]]]
@@ -142,10 +207,19 @@ KV-per-token table, and the four levers when you don't fit are in
 
 ## Related
 - [[infrastructure/nvidia-dynamo]]
+- [[infrastructure/serving-stack-landscape]]
+- [[infrastructure/sglang]]
+- [[infrastructure/vllm-production-stack]]
+- [[infrastructure/llm-d]]
 - [[infrastructure/quantization]]
 - [[concepts/tool-selection]]
+- [[concepts/parallelism-strategies]]
+- [[concepts/disaggregated-serving]]
+- [[concepts/serving-performance-measurement]]
 - [[concepts/kv-cache-and-context-length]]
+- [[comparisons/scaling-1-to-5-machines]]
 
 ## Sources
 - [[sources/vllm-tool-calling-docs]]
 - [[sources/vllm-quantization-docs]]
+- [[sources/vllm-distributed-serving-2026-05]]

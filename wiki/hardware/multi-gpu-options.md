@@ -1,7 +1,7 @@
 ---
-tags: [hardware, gpu, aws, multi-gpu]
-last_updated: 2026-05-07
-source_count: 2
+tags: [hardware, gpu, aws, multi-gpu, multi-node]
+last_updated: 2026-05-08
+source_count: 4
 ---
 
 # Multi-GPU options on AWS
@@ -9,7 +9,9 @@ source_count: 2
 When a model doesn't fit on the largest single-GPU AWS SKU (now **L40S 48 GB**,
 not A10G 24 GB — see [[hardware/g6e-l40s]]), step up. This page covers the
 multi-GPU decision logic; for the full price/spec menu including all
-single-GPU options, see [[hardware/aws-gpu-landscape]].
+single-GPU options, see [[hardware/aws-gpu-landscape]]. For multi-**node**
+networking specifics, see [[hardware/aws-efa]]. For the parallelism axes
+themselves (TP / PP / DP / EP), see [[concepts/parallelism-strategies]].
 
 ## Updated decision tree
 
@@ -25,16 +27,42 @@ single-card P-class). Updated:
 
 ## When does multi-GPU actually help?
 
+[Source: [[sources/vllm-distributed-serving-2026-05]]]
+
 - **Tensor parallelism (TP)** splits model weights across N GPUs. Required when
   weights don't fit a single card. Per-GPU compute drops linearly but communication
   overhead eats some of it (notable on PCIe-only g5/g6/g6e; minor on NVLink p4d/p5/p6).
 - **Pipeline parallelism (PP)** stages layers across GPUs. Better for very large
-  models, worse for latency. Use only when TP at full ranks isn't enough.
+  models, worse for latency. Per-step transfer volume is `B·S·H·(P-1)·bytes` —
+  near order-of-magnitude lower than TP — making PP the right choice across
+  slow links.
+- **Data parallelism (DP)** runs N independent replicas. Zero inter-node
+  comm for dense models; embarrassingly parallel for throughput.
 - **Expert parallelism (EP)** for MoE — vLLM `--enable-expert-parallel`. Required for
   large MoEs like Qwen3-Coder-480B and DeepSeek-V3.1.
-- **Disaggregated prefill/decode** (see [[infrastructure/nvidia-dynamo]]) splits the
-  prefill workload from decode across separate GPU groups — only meaningful when you
-  have ≥2 GPUs and a streaming workload with mixed prompt lengths.
+- **Disaggregated prefill/decode** (see [[concepts/disaggregated-serving]] and
+  [[infrastructure/nvidia-dynamo]]) splits the prefill workload from decode
+  across separate GPU groups — only meaningful when you have ≥2 GPUs and a
+  streaming workload with mixed prompt lengths.
+
+The full TP / PP / DP / EP decision rubric is at
+[[concepts/parallelism-strategies]].
+
+## Multi-node vs multi-replica
+
+A fundamentally different question from "more GPUs in one node":
+
+- **Multi-replica (DP across nodes)**: each node runs an independent vLLM
+  replica; a router (KV-aware) load-balances across them. **No inter-node
+  TP traffic.** This is the answer for "I have a model that fits a single
+  node, I want more QPS." See [[comparisons/scaling-1-to-5-machines]].
+- **Multi-node TP+PP**: one model spans multiple nodes (e.g. Llama-3.1-405B
+  across 2× p5.48xlarge with TP=8, PP=2). **Requires fast inter-node
+  networking** — EFA on AWS. See [[hardware/aws-efa]] and
+  [[infrastructure/leaderworkerset]].
+
+⚠ **g5 lacks EFA**, so multi-node TP across g5 instances is non-viable.
+g5 multi-machine scaling = multi-replica only.
 
 ## Model-size → smallest single-node AWS box
 
@@ -81,10 +109,16 @@ non-prod workloads.
 
 - [[hardware/aws-gpu-landscape]] — full price/spec menu
 - [[hardware/a10g-g5xlarge]], [[hardware/g6e-l40s]] — per-GPU deep dives
+- [[hardware/aws-efa]] — multi-node networking specifics
+- [[concepts/parallelism-strategies]] — TP/PP/DP/EP decision rubric
 - [[infrastructure/quantization]]
 - [[infrastructure/nvidia-dynamo]]
+- [[infrastructure/leaderworkerset]] — K8s API for multi-host TP+PP
+- [[comparisons/scaling-1-to-5-machines]] — multi-replica recipe
 
 ## Sources
 
 - [[sources/aws-extended-gpu-pricing-2026-05]]
 - [[sources/aws-ec2-pricing-2026-05]]
+- [[sources/vllm-distributed-serving-2026-05]]
+- [[sources/aws-efa-multinode-2026-05]]

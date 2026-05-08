@@ -1,7 +1,7 @@
 ---
 tags: [overview]
-last_updated: 2026-05-07
-source_count: 17
+last_updated: 2026-05-08
+source_count: 26
 ---
 
 # Overview
@@ -16,24 +16,44 @@ AWS GPU spectrum from g4dn ($0.526/hr) to p6-b200 ($113.93/hr) and the matching
 open-source model tiers from 7B to 1T parameters. See
 [[hardware/aws-gpu-landscape]] and [[comparisons/models-by-budget]].
 
+The wiki also now covers **alternative serving stacks** beyond the original
+vLLM + NVIDIA Dynamo baseline (SGLang, TensorRT-LLM, LMDeploy, Ray Serve LLM,
+vLLM Production Stack, llm-d, AIBrix, LeaderWorkerSet) and **multi-machine
+scaling** (1 → 2 → 5 g5.xlarge replicas) plus **multi-node serving performance
+measurement methodology** (TTFT/ITL/goodput, GenAI-Perf, MLPerf v5.0). See
+[[infrastructure/serving-stack-landscape]] and
+[[comparisons/scaling-1-to-5-machines]].
+
 ## Hard constraints (still)
 
-- **Serving stack**: [[infrastructure/vllm]] (latest stable: 0.20.x) under
-  [[infrastructure/nvidia-dynamo]]. Dynamo's value is multi-GPU/multi-node;
-  on a single GPU use vLLM directly per Dynamo's own README.
 - **Capability focus**: [[concepts/tool-selection]] and [[concepts/code-generation]].
   Pure conversational quality is secondary.
 - **License**: commercial-friendly preferred. CC-BY-NC-4.0 (xLAM) and MNPL
   (Codestral 22B) are non-commercial blockers; Llama 4 Community is OK below
   700M MAU.
 
-## Soft constraints (relaxed in this expansion)
+## Soft constraints (relaxed)
+
+- **Serving stack**: [[infrastructure/vllm]] (latest stable: 0.20.x) is the
+  default. [[infrastructure/nvidia-dynamo]] is the canonical multi-node
+  orchestrator; Dynamo's value is multi-GPU/multi-node, on a single GPU use
+  vLLM directly per Dynamo's own README. The wiki now also documents
+  [[infrastructure/sglang]] (RadixAttention, prefix-heavy/agentic workloads),
+  [[infrastructure/tensorrt-llm]] (NVIDIA peak / NVFP4),
+  [[infrastructure/lmdeploy]] (AWQ-W4A16 specialty), and
+  [[infrastructure/ray-serve-llm]] / [[infrastructure/vllm-production-stack]] /
+  [[infrastructure/llm-d]] / [[infrastructure/aibrix]] for K8s orchestration.
+  See [[infrastructure/serving-stack-landscape]] for the master menu.
 
 - **GPU**: now spans the full AWS NVIDIA lineup — T4 (sm_75), A10G (sm_86), L4
   (sm_89), L40S (sm_89), A100 (sm_80), H100 (sm_90), H200 (sm_90), B200 (sm_100).
 - **Instance**: g5.xlarge remains the **baseline**, but **g6e.xlarge ($1.861/hr,
   L40S 48 GB)** is now the recommended sweet spot for 24–32B models that want
   full quality without multi-GPU comms overhead.
+- **Multi-machine serving**: g5 is **EFA-less**; cross-node TP is non-viable.
+  Scale 1 → 2 → 5 g5 by **independent replicas behind a KV-aware router**, not
+  multi-node TP. EFA is available on g6e and above. See
+  [[hardware/aws-efa]] and [[comparisons/scaling-1-to-5-machines]].
 
 ## What "wins" looks like (by budget tier)
 
@@ -139,6 +159,23 @@ Adds the open-source frontier: **[[models/deepseek-v3.1]]** (671B/37B, SWE-V 66.
   performance than BFCL.
 - **GLM-4.5-Air vs GLM-4.6** — Z.ai released 4.6; impact on Air-tier model not
   yet documented.
+- **vLLM vs SGLang on A10G for agent workloads** — published comparisons all
+  use H100. Need a g5.xlarge-specific evaluation for tool-calling agentic
+  traffic (where SGLang's RadixAttention should win materially).
+- **No widely-adopted public agentic-tool-call serving trace.** Production
+  benchmarks against agentic workloads currently require capturing your own
+  traces and replaying. BFCL v3/v4, AgentBoard, MCP-Bench, MINT exist but
+  are synthetic. See [[concepts/serving-performance-measurement]].
+
+## Scaling and serving-stack expansion (May 2026)
+
+Three new threads, each with its own decision tree:
+
+| Thread | Entry point |
+|---|---|
+| **Alternative serving stacks** (when vLLM isn't the right choice) | [[infrastructure/serving-stack-landscape]], [[comparisons/serving-stacks-comparison]] |
+| **Scaling 1 → 2 → 5 g5.xlarge** (independent replicas + router) | [[comparisons/scaling-1-to-5-machines]] |
+| **Multi-node serving performance measurement** (goodput, MLPerf, GenAI-Perf) | [[concepts/serving-performance-measurement]] |
 
 ## Sources
 
@@ -159,3 +196,12 @@ Adds the open-source frontier: **[[models/deepseek-v3.1]]** (671B/37B, SWE-V 66.
 - [[sources/kimi-k2-cards]]
 - [[sources/gpt-oss-cards]]
 - [[sources/devstral-small-cards]]
+- [[sources/serving-stacks-alternatives-2026-05]]
+- [[sources/vllm-distributed-serving-2026-05]]
+- [[sources/nvidia-dynamo-multinode-2026-05]]
+- [[sources/disaggregated-serving-papers-2026-05]]
+- [[sources/k8s-llm-orchestration-2026-05]]
+- [[sources/aws-efa-multinode-2026-05]]
+- [[sources/sglang-distributed-2026-05]]
+- [[sources/llm-serving-perf-metrics-2026-05]]
+- [[sources/llm-serving-perf-tools-2026-05]]

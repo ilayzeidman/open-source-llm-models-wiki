@@ -1,12 +1,21 @@
 ---
 tags: [infrastructure, serving, nvidia-dynamo]
-last_updated: 2026-05-07
-source_count: 1
+last_updated: 2026-05-08
+source_count: 3
 ---
 
 # NVIDIA Dynamo
 
-NVIDIA's open-source orchestration layer that sits *above* engines like [[infrastructure/vllm]] (and TensorRT-LLM, SGLang, llama.cpp). Built in Rust + Python; targets datacenter-scale, multi-node distributed inference. OpenAI-compatible HTTP frontend.
+NVIDIA's open-source orchestration layer that sits *above* engines like
+[[infrastructure/vllm]], [[infrastructure/tensorrt-llm]], and
+[[infrastructure/sglang]]. Built in Rust + Python; targets datacenter-scale,
+multi-node distributed inference. OpenAI-compatible HTTP frontend.
+
+> ⚠ **Naming**: NVIDIA renamed Triton Inference Server to **Dynamo-Triton**
+> (March 2025). The "Dynamo" brand now spans **two products**: the
+> LLM-focused **NVIDIA Dynamo** described here, and the rebranded
+> **Dynamo-Triton** (multi-framework general inference). See
+> [[infrastructure/triton-vs-dynamo]] for the disambiguation.
 
 ## What Dynamo adds on top of vLLM
 
@@ -25,11 +34,20 @@ NVIDIA's open-source orchestration layer that sits *above* engines like [[infras
 
 ## Reported benchmarks (multi-GPU/multi-node)
 
-- **30× throughput** on DeepSeek-R1 671B on GB200 NVL72.
-- **>2×** on Llama-70B on Hopper.
-- **2× faster TTFT** on Qwen3-Coder 480B.
+[Source: [[sources/nvidia-dynamo-multinode-2026-05]]]
 
-These gains are categorically multi-GPU / multi-node. None translate to single-A10G.
+| Result | Hardware | Source type |
+|---|---|---|
+| 30× throughput on DeepSeek-R1 671B | GB200 NVL72 | NVIDIA launch (GTC 2025) |
+| Doubled Llama performance at same GPU count | Hopper | NVIDIA newsroom |
+| 2× faster TTFT on Qwen3-Coder 480B | (multi-node) | NVIDIA |
+| **12,587 tok/s/GPU** on Kimi K2.5 NVFP4 8k/1k | GB200 NVL72 + Dynamo+vLLM | SemiAnalysis InferenceMAX (real hardware) |
+| 4,021 tok/s/GPU on same model | Single B200 node | SemiAnalysis (real hardware) |
+| 6× MoE throughput in medium-latency regime | GB200 NVL72 | NVIDIA simulation |
+
+The ~3× single-node-vs-disaggregated win on real GB200 NVL72 hardware is the
+strongest data point for Dynamo at scale. These gains are categorically
+multi-GPU / multi-node. **None translate to single-A10G.**
 
 ## Honest assessment for g5.xlarge
 
@@ -84,15 +102,65 @@ models), then vLLM engine init + torch.compile (~1–3 min) + the
 KV-cache check. The frontend's "readiness" tells you nothing about that
 chain.
 
+## Disaggregated prefill/decode (the canonical Dynamo win)
+
+[Source: [[sources/nvidia-dynamo-multinode-2026-05]],
+[[sources/disaggregated-serving-papers-2026-05]]]
+
+The headline architecture: prefill (compute-bound) and decode (memory-
+bandwidth-bound) on separate GPU pools, with KV cache transferred via NIXL.
+Three-step flow: prefill compute → KV transfer → decode.
+
+- Decode workers also handle short prefills (route decisions made there).
+- Conditional disaggregation: requests go remote only when prefill length >
+  threshold AND prefill queue not overloaded.
+- Runtime elasticity: "Workers and prefill workers can be added and removed at
+  runtime without any system-level synchronization or overheads."
+
+Theory: see [[concepts/disaggregated-serving]] for the underlying papers
+(DistServe, Splitwise, Mooncake) and the goodput improvements they report.
+
+## Multi-node deployment alternatives
+
+If your deployment is multi-replica (not multi-node single-model), Dynamo
+may be heavier than you need. Lighter-weight alternatives:
+
+- [[infrastructure/vllm-production-stack]] — Helm-deployable vLLM cluster
+  with KV-aware router; the right answer for "scale 1 → 5 vLLM replicas
+  on K8s."
+- [[infrastructure/llm-d]] — KServe-integrated K8s Operator; full canary +
+  scale-to-zero + multi-model.
+- [[infrastructure/aibrix]] — heterogeneous GPU pools, high-density LoRA.
+- [[infrastructure/leaderworkerset]] — K8s API for multi-host TP+PP single
+  replica (e.g. Llama-3.1-405B across 2× p5.48xlarge).
+
+For the "1 → 2 → 5 g5.xlarge" common scaling case (small model fits a
+single g5), use [[comparisons/scaling-1-to-5-machines]] — Dynamo is overkill.
+
 ## Where to read further
 
-- The hosted docs at `docs.nvidia.com/dynamo/...` returned 404s during research; the GitHub README is the most reliable architecture reference.
+- The hosted docs at `docs.nvidia.com/dynamo/...` are now reliable as of 2026.
+- See [[infrastructure/triton-vs-dynamo]] to disambiguate Dynamo vs
+  Dynamo-Triton vs the original Triton Inference Server.
 
 ## Related
 - [[infrastructure/vllm]]
+- [[infrastructure/sglang]]
+- [[infrastructure/tensorrt-llm]]
+- [[infrastructure/triton-vs-dynamo]]
+- [[infrastructure/serving-stack-landscape]]
+- [[infrastructure/vllm-production-stack]]
+- [[infrastructure/llm-d]]
 - [[hardware/a10g-g5xlarge]]
 - [[hardware/multi-gpu-options]]
+- [[hardware/aws-efa]]
+- [[concepts/parallelism-strategies]]
+- [[concepts/disaggregated-serving]]
+- [[concepts/serving-performance-measurement]]
 - [[concepts/kv-cache-and-context-length]]
+- [[comparisons/scaling-1-to-5-machines]]
 
 ## Sources
 - [[sources/nvidia-dynamo-readme]]
+- [[sources/nvidia-dynamo-multinode-2026-05]]
+- [[sources/disaggregated-serving-papers-2026-05]]
